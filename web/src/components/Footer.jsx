@@ -1,6 +1,24 @@
 import { Box, HStack, Link, Text } from '@chakra-ui/react'
 
-export function Footer() {
+export function Footer({ compact = false }) {
+  if (compact) {
+    return (
+      <HStack spacing={2} fontSize="xs">
+        <Text color="gray.400">Made with</Text>
+        <Text color="red.400">♥</Text>
+        <Text color="gray.400">by</Text>
+        <Link
+          href="https://kartoza.com"
+          isExternal
+          color="teal.400"
+          _hover={{ color: 'teal.300' }}
+        >
+          Kartoza
+        </Link>
+      </HStack>
+    )
+  }
+
   return (
     <Box
       py={6}
@@ -10,12 +28,14 @@ export function Footer() {
       mt={8}
     >
       <HStack spacing={2} justify="center" wrap="wrap">
-        <Text color="gray.400">Made with 💗 by</Text>
+        <Text color="gray.400">Made with</Text>
+        <Text color="red.400">💗</Text>
+        <Text color="gray.400">by</Text>
         <Link
           href="https://kartoza.com"
           isExternal
-          color="brand.400"
-          _hover={{ color: 'brand.300' }}
+          color="teal.400"
+          _hover={{ color: 'teal.300' }}
         >
           Kartoza
         </Link>
@@ -23,8 +43,8 @@ export function Footer() {
         <Link
           href="https://github.com/sponsors/kartoza"
           isExternal
-          color="brand.400"
-          _hover={{ color: 'brand.300' }}
+          color="teal.400"
+          _hover={{ color: 'teal.300' }}
         >
           Donate!
         </Link>
@@ -32,8 +52,8 @@ export function Footer() {
         <Link
           href="https://github.com/kartoza/MyGreatCircle"
           isExternal
-          color="brand.400"
-          _hover={{ color: 'brand.300' }}
+          color="teal.400"
+          _hover={{ color: 'teal.300' }}
         >
           GitHub
         </Link>

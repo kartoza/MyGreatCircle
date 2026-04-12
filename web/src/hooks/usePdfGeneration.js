@@ -2,6 +2,14 @@ import { useCallback, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import 'svg2pdf.js'
 
+// Kartoza logo as SVG path data (simplified K logo)
+const KARTOZA_LOGO_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 30" width="100" height="30">
+  <rect x="0" y="0" width="100" height="30" rx="4" fill="#14b8a6"/>
+  <text x="50" y="20" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">KARTOZA</text>
+</svg>
+`
+
 /**
  * Hook for generating PDFs from the map visualization
  */
@@ -103,10 +111,27 @@ export function usePdfGeneration() {
         }
       })
 
-      // Footer
+      // Footer with Kartoza branding
+      const footerY = pageHeight - 12
+      pdf.setFontSize(9)
+      pdf.setTextColor(60)
+      pdf.setFont('helvetica', 'normal')
+
+      // Kartoza branding
+      pdf.setTextColor(20, 184, 166) // Teal color
+      pdf.text('Made with', margin, footerY)
+      pdf.setTextColor(239, 68, 68) // Red heart
+      pdf.text(' ♥ ', margin + 22, footerY)
+      pdf.setTextColor(20, 184, 166)
+      pdf.text('by Kartoza', margin + 26, footerY)
+
+      // Links
+      pdf.setTextColor(100)
       pdf.setFontSize(8)
-      pdf.setTextColor(128)
-      pdf.text('mygreatcircle.com', pageWidth / 2, pageHeight - 10, { align: 'center' })
+      pdf.text('kartoza.com', margin, footerY + 5)
+
+      // MyGreatCircle URL on right
+      pdf.text('mygreatcircle.com', pageWidth - margin, footerY, { align: 'right' })
 
       pdf.save('my-journey-factsheet.pdf')
     } finally {
@@ -143,18 +168,30 @@ export function usePdfGeneration() {
         })
       }
 
-      // Bottom bar with place names
-      const footerY = pageHeight - 15
+      // Bottom bar with place names and Kartoza branding
+      const footerY = pageHeight - 18
       pdf.setFontSize(10)
-      pdf.setTextColor(128)
+      pdf.setTextColor(100)
 
       const placeNames = places.map(p => p.name).join(' → ')
-      const truncatedNames = placeNames.length > 100
-        ? placeNames.slice(0, 100) + '...'
+      const truncatedNames = placeNames.length > 80
+        ? placeNames.slice(0, 80) + '...'
         : placeNames
 
       pdf.text(truncatedNames, margin, footerY)
-      pdf.text('mygreatcircle.com', pageWidth - margin, footerY, { align: 'right' })
+
+      // Kartoza branding on bottom right
+      const brandY = pageHeight - 10
+      pdf.setFontSize(9)
+      pdf.setTextColor(20, 184, 166)
+      pdf.text('Made with', pageWidth - 95, brandY)
+      pdf.setTextColor(239, 68, 68)
+      pdf.text(' ♥ ', pageWidth - 73, brandY)
+      pdf.setTextColor(20, 184, 166)
+      pdf.text('by Kartoza', pageWidth - 69, brandY)
+      pdf.setTextColor(100)
+      pdf.setFontSize(8)
+      pdf.text('kartoza.com | mygreatcircle.com', pageWidth - margin, brandY + 5, { align: 'right' })
 
       pdf.save('my-journey-poster.pdf')
     } finally {

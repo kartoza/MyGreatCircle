@@ -1,11 +1,13 @@
 import {
   SimpleGrid,
+  HStack,
   Box,
   Text,
   Stat,
   StatLabel,
   StatNumber,
   StatHelpText,
+  VStack,
 } from '@chakra-ui/react'
 
 function formatDistance(km) {
@@ -15,11 +17,40 @@ function formatDistance(km) {
   return `${km} km`
 }
 
-export function InsightsPanel({ stats }) {
+// Compact stat for overlay mode
+function CompactStat({ label, value, sub }) {
+  return (
+    <VStack spacing={0} align="center">
+      <Text fontSize="2xl" fontWeight="bold" color="white" lineHeight="1">
+        {value}
+      </Text>
+      <Text fontSize="xs" color="gray.400" textTransform="uppercase">
+        {label}
+      </Text>
+    </VStack>
+  )
+}
+
+export function InsightsPanel({ stats, compact = false }) {
   if (!stats || stats.totalPlaces === 0) {
     return null
   }
 
+  // Compact mode for overlay
+  if (compact) {
+    return (
+      <HStack spacing={8} justify="center">
+        <CompactStat label="Places" value={stats.totalPlaces} />
+        <CompactStat label="Countries" value={stats.countries.length} />
+        <CompactStat label="Distance" value={formatDistance(stats.totalDistanceKm)} />
+        {stats.longestLegKm > 0 && (
+          <CompactStat label="Longest Move" value={formatDistance(stats.longestLegKm)} />
+        )}
+      </HStack>
+    )
+  }
+
+  // Full mode
   return (
     <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
       <Stat bg="gray.700" p={4} borderRadius="md">

@@ -1,42 +1,64 @@
-import { HStack, Button, Tooltip } from '@chakra-ui/react'
+import { HStack, Box, Tooltip, Text } from '@chakra-ui/react'
 import { THEMES, THEME_IDS } from '../lib/themes'
 
 export function ThemeSelector({ currentTheme, onThemeChange }) {
   return (
-    <HStack spacing={2} wrap="wrap" justify="center">
+    <HStack spacing={1}>
+      <Text fontSize="xs" color="gray.400" mr={2}>
+        Theme:
+      </Text>
       {THEME_IDS.map(themeId => {
         const theme = THEMES[themeId]
         const isSelected = currentTheme === themeId
 
-        // Get preview color for button
+        // Get preview color for swatch
         const previewColor = theme.background.type === 'gradient'
           ? theme.background.colors[0]
           : theme.background.color
 
-        const textColor = ['vintage', 'modern'].includes(themeId)
-          ? 'gray.800'
-          : 'white'
+        // Get arc color for the inner ring
+        const arcColor = theme.arc.stroke.startsWith('url')
+          ? '#ff6b6b' // Neon uses gradient, show first color
+          : theme.arc.stroke
 
         return (
           <Tooltip
             key={themeId}
-            label={theme.description}
-            placement="top"
+            label={`${theme.name}: ${theme.description}`}
+            placement="bottom"
+            hasArrow
+            bg="gray.800"
           >
-            <Button
-              size="sm"
+            <Box
+              as="button"
+              w="28px"
+              h="28px"
+              borderRadius="full"
               bg={previewColor}
-              color={textColor}
-              border="2px solid"
-              borderColor={isSelected ? 'brand.500' : 'transparent'}
+              border="3px solid"
+              borderColor={isSelected ? 'teal.400' : 'transparent'}
+              position="relative"
+              transition="all 0.2s"
               _hover={{
-                transform: 'scale(1.05)',
-                borderColor: 'brand.400',
+                transform: 'scale(1.15)',
+                borderColor: isSelected ? 'teal.400' : 'whiteAlpha.400',
               }}
               onClick={() => onThemeChange(themeId)}
+              overflow="hidden"
             >
-              {theme.name}
-            </Button>
+              {/* Inner arc color indicator */}
+              <Box
+                position="absolute"
+                top="50%"
+                left="50%"
+                transform="translate(-50%, -50%)"
+                w="10px"
+                h="10px"
+                borderRadius="full"
+                bg={arcColor}
+                opacity={0.9}
+              />
+            </Box>
           </Tooltip>
         )
       })}
