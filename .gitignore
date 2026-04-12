@@ -1,0 +1,39 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# Node
+node_modules/
+web/dist/
+web/build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build
+dist/
+build/
+
+# Environment
+.env
+.env.local
+
+# Nix
+result
+result-*
+
+# Superpowers
+.superpowers/
+
+# OS
+.DS_Store
+Thumbs.db
