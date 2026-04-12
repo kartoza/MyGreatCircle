@@ -12,6 +12,7 @@ export function MapVisualization({
   width = 800,
   height = 450,
   svgRef: externalSvgRef,
+  mode = 'complete', // 'loading' shows only dots, 'complete' shows full animation
 }) {
   const containerRef = useRef(null)
   const internalSvgRef = useRef(null)
@@ -117,7 +118,40 @@ export function MapVisualization({
         .attr('stroke', themeConfig.land.stroke)
         .attr('stroke-width', themeConfig.land.strokeWidth)
 
-      // Draw great circle arcs
+      // In loading mode, just show dots without arcs or animation
+      if (mode === 'loading') {
+        const pointsGroup = svg.append('g').attr('class', 'points')
+
+        validPlaces.forEach((place) => {
+          const [x, y] = projection(place.coordinates)
+
+          // Pulse animation for newly added point
+          pointsGroup.append('circle')
+            .attr('cx', x)
+            .attr('cy', y)
+            .attr('r', themeConfig.point.radius * 2)
+            .attr('fill', 'none')
+            .attr('stroke', themeConfig.point.fill)
+            .attr('stroke-width', 2)
+            .attr('opacity', 0.8)
+            .transition()
+            .duration(600)
+            .attr('r', themeConfig.point.radius * 4)
+            .attr('opacity', 0)
+            .remove()
+
+          // The actual dot
+          pointsGroup.append('circle')
+            .attr('cx', x)
+            .attr('cy', y)
+            .attr('r', themeConfig.point.radius)
+            .attr('fill', themeConfig.point.fill)
+            .attr('filter', themeConfig.point.glow ? 'url(#glow)' : null)
+        })
+        return
+      }
+
+      // Complete mode: Draw great circle arcs with animation
       if (validPlaces.length >= 2) {
         const arcsGroup = svg.append('g').attr('class', 'arcs')
 
@@ -146,7 +180,7 @@ export function MapVisualization({
         }
       }
 
-      // Draw place markers
+      // Draw place markers with animation
       const pointsGroup = svg.append('g').attr('class', 'points')
 
       validPlaces.forEach((place, i) => {
@@ -165,7 +199,7 @@ export function MapVisualization({
       })
     })
 
-  }, [validPlaces, theme, width, height, themeConfig, svgRef])
+  }, [validPlaces, theme, width, height, themeConfig, svgRef, mode])
 
   return (
     <Box

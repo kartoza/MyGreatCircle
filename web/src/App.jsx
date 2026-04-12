@@ -27,6 +27,7 @@ import {
   ModalBody,
   ModalCloseButton,
   Input,
+  Progress,
 } from '@chakra-ui/react'
 
 import { MapVisualization } from './components/MapVisualization'
@@ -59,6 +60,10 @@ function App() {
   const [showDemo, setShowDemo] = useState(true)
   const [showWelcome, setShowWelcome] = useState(true)
   const [mapDimensions, setMapDimensions] = useState({ width: 1200, height: 800 })
+
+  // Progressive geocoding state
+  const [geocodingProgress, setGeocodingProgress] = useState(null) // { current, total, percent, places }
+  const [mapMode, setMapMode] = useState('complete') // 'loading' or 'complete'
 
   const svgRef = useRef(null)
   const mapContainerRef = useRef(null)
@@ -128,12 +133,29 @@ function App() {
   const handleInputSubmit = async (text) => {
     setInputText(text)
     const parsed = parsePlaceInput(text)
+
+    // Start progressive geocoding
+    setShowDemo(false)
+    setShowWelcome(false)
+    setMapMode('loading')
+    setGeocodingProgress({ current: 0, total: parsed.length, percent: 0, places: [] })
+    onInputClose()
+
     try {
-      const geocoded = await geocodePlaces(parsed)
-      setPlaces(geocoded)
-      setShowDemo(false)
-      setShowWelcome(false)
-      onInputClose()
+      const geocoded = await geocodePlaces(parsed, (progressPlaces, percent, current, total) => {
+        // Update map with places as they're geocoded
+        const validPlaces = progressPlaces.filter(p => p.coordinates)
+        setPlaces(validPlaces)
+        setGeocodingProgress({ current, total, percent: Math.round(percent * 100), places: progressPlaces })
+      })
+
+      // All done - switch to complete mode for animation
+      setGeocodingProgress(null)
+      setPlaces([]) // Clear briefly
+      await new Promise(resolve => setTimeout(resolve, 100)) // Brief pause
+      setPlaces(geocoded) // Set final places
+      setMapMode('complete') // Trigger animation
+
       toast({
         title: 'Journey mapped!',
         description: `Found ${geocoded.filter(p => p.coordinates).length} of ${geocoded.length} places.`,
@@ -141,6 +163,8 @@ function App() {
         duration: 3000,
       })
     } catch (error) {
+      setGeocodingProgress(null)
+      setMapMode('complete')
       toast({
         title: 'Geocoding failed',
         description: error.message,
@@ -260,8 +284,49 @@ function App() {
           width={mapDimensions.width}
           height={mapDimensions.height}
           svgRef={svgRef}
+          mode={mapMode}
         />
       </Box>
+
+      {/* GEOCODING PROGRESS BAR */}
+      {geocodingProgress && (
+        <Box
+          position="absolute"
+          bottom="50%"
+          left="50%"
+          transform="translateX(-50%)"
+          zIndex={15}
+          bg="blackAlpha.800"
+          backdropFilter="blur(10px)"
+          px={8}
+          py={6}
+          borderRadius="xl"
+          minW="300px"
+          textAlign="center"
+        >
+          <Text color="white" mb={2} fontWeight="medium">
+            Finding places on the map...
+          </Text>
+          <Text color="gray.400" fontSize="sm" mb={3}>
+            {geocodingProgress.current} of {geocodingProgress.total} places
+          </Text>
+          <Progress
+            value={geocodingProgress.percent}
+            size="sm"
+            colorScheme="teal"
+            borderRadius="full"
+            bg="whiteAlpha.200"
+            hasStripe
+            isAnimated
+          />
+          {geocodingProgress.places.length > 0 && (
+            <Text color="teal.300" fontSize="sm" mt={3}>
+              {geocodingProgress.places[geocodingProgress.places.length - 1]?.geocodedName ||
+               geocodingProgress.places[geocodingProgress.places.length - 1]?.name}
+            </Text>
+          )}
+        </Box>
+      )}
 
       {/* TOP BAR - Floating controls */}
       <Flex
@@ -274,7 +339,7 @@ function App() {
         align="center"
         pointerEvents="none"
       >
-        {/* Logo/Title */}
+        {/* Logo/Title - Click to go back to start */}
         <HStack
           bg="blackAlpha.700"
           backdropFilter="blur(10px)"
@@ -282,10 +347,20 @@ function App() {
           py={2}
           borderRadius="full"
           pointerEvents="auto"
+          cursor="pointer"
+          onClick={() => {
+            if (places.length === 0 || window.confirm('Go back to start? Your current journey will be cleared.')) {
+              handleStartOver()
+            }
+          }}
+          _hover={{ bg: 'blackAlpha.800' }}
+          transition="background 0.2s"
         >
-          <Heading size="md" bgGradient="linear(to-r, teal.300, cyan.400)" bgClip="text">
-            MyGreatCircle
-          </Heading>
+          <Tooltip label="Click to start over" placement="bottom">
+            <Heading size="md" bgGradient="linear(to-r, teal.300, cyan.400)" bgClip="text">
+              MyGreatCircle
+            </Heading>
+          </Tooltip>
           {!showDemo && places.length > 0 && (
             <Badge colorScheme="teal" variant="subtle">
               {places.length} places
@@ -512,16 +587,22 @@ function App() {
       </Drawer>
 
       {/* OUTPUT MODAL */}
-      <Modal isOpen={isOutputOpen} onClose={onOutputClose} size="xl" isCentered>
+      <Modal
+        isOpen={isOutputOpen}
+        onClose={onOutputClose}
+        size="xl"
+        isCentered
+        returnFocusOnClose={true}
+      >
         <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(8px)" />
         <ModalContent bg="gray.900" borderRadius="xl" mx={4}>
-          <ModalHeader>
+          <ModalHeader pt={6} pb={4} borderBottomWidth="1px" borderColor="gray.700">
             <Heading size="md" bgGradient="linear(to-r, teal.300, cyan.400)" bgClip="text">
               Download Your Journey
             </Heading>
           </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+          <ModalCloseButton top={4} right={4} />
+          <ModalBody p={6}>
             <OutputCards
               onDownloadFactSheet={handleDownloadFactSheet}
               onDownloadPoster={handleDownloadPoster}

@@ -34,22 +34,29 @@ export function OutputCards({
           borderRadius="lg"
           border="1px solid"
           borderColor="gray.600"
+          transition="all 0.2s"
+          _hover={{
+            borderColor: 'gray.500',
+            transform: 'translateY(-2px)',
+            boxShadow: 'lg',
+          }}
         >
           <VStack spacing={4} align="stretch">
-            <Box textAlign="center">
-              <Text fontSize="2xl" mb={2}>📄</Text>
+            <Box textAlign="center" minH="80px">
+              <Text fontSize="2xl" mb={2} aria-hidden="true" role="img">📄</Text>
               <Heading size="md">Fact Sheet</Heading>
               <Text fontSize="sm" color="gray.400" mt={1}>
                 A4 PDF with map, stats & places
               </Text>
             </Box>
-            <Text fontSize="sm" color="green.400" textAlign="center">
+            <Text fontSize="sm" color="green.400" textAlign="center" minH="20px">
               Free
             </Text>
             <Button
               colorScheme="brand"
               onClick={onDownloadFactSheet}
               isLoading={isGenerating}
+              loadingText="Generating..."
             >
               Download PDF
             </Button>
@@ -63,22 +70,29 @@ export function OutputCards({
           borderRadius="lg"
           border="1px solid"
           borderColor="gray.600"
+          transition="all 0.2s"
+          _hover={{
+            borderColor: 'gray.500',
+            transform: 'translateY(-2px)',
+            boxShadow: 'lg',
+          }}
         >
           <VStack spacing={4} align="stretch">
-            <Box textAlign="center">
-              <Text fontSize="2xl" mb={2}>🖼️</Text>
+            <Box textAlign="center" minH="80px">
+              <Text fontSize="2xl" mb={2} aria-hidden="true" role="img">🖼️</Text>
               <Heading size="md">Poster</Heading>
               <Text fontSize="sm" color="gray.400" mt={1}>
                 A3 landscape, print-ready
               </Text>
             </Box>
-            <Text fontSize="sm" color="green.400" textAlign="center">
+            <Text fontSize="sm" color="green.400" textAlign="center" minH="20px">
               Free
             </Text>
             <Button
               colorScheme="brand"
               onClick={onDownloadPoster}
               isLoading={isGenerating}
+              loadingText="Generating..."
             >
               Download PDF
             </Button>
@@ -90,14 +104,21 @@ export function OutputCards({
           bg="gray.700"
           p={6}
           borderRadius="lg"
-          border="2px solid"
+          border="1px solid"
           borderColor="brand.500"
           position="relative"
+          overflow="hidden"
+          transition="all 0.2s"
+          _hover={{
+            borderColor: 'brand.400',
+            transform: 'translateY(-2px)',
+            boxShadow: 'lg',
+          }}
         >
           <Box
             position="absolute"
-            top={-3}
-            right={4}
+            top={2}
+            right={2}
             bg="brand.500"
             px={2}
             py={0.5}
@@ -108,14 +129,14 @@ export function OutputCards({
             COMING SOON
           </Box>
           <VStack spacing={4} align="stretch">
-            <Box textAlign="center">
-              <Text fontSize="2xl" mb={2}>🎁</Text>
+            <Box textAlign="center" minH="80px">
+              <Text fontSize="2xl" mb={2} aria-hidden="true" role="img">🎁</Text>
               <Heading size="md">Premium</Heading>
               <Text fontSize="sm" color="gray.400" mt={1}>
                 Extra themes, no watermark
               </Text>
             </Box>
-            <Text fontSize="sm" color="brand.400" textAlign="center">
+            <Text fontSize="sm" color="brand.400" textAlign="center" minH="20px">
               Unlock with email
             </Text>
             <Button
