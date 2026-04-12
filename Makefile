@@ -1,4 +1,4 @@
-.PHONY: all build run test lint clean dev web-dev web-build web-install docs-dev
+.PHONY: all build run test lint clean dev web-dev web-build web-install docs-dev docs-build
 
 VERSION := 0.1.0
 BINARY := mygreatcircle
