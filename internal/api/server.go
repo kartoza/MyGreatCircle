@@ -25,6 +25,7 @@ func NewServer(port int, webDir string) *Server {
 func (s *Server) setupRoutes() {
 	// API routes
 	s.mux.HandleFunc("GET /api/health", s.handleHealth)
+	s.mux.HandleFunc("POST /api/geocode", s.handleGeocode)
 
 	// Static files (web frontend)
 	fs := http.FileServer(http.Dir(s.webDir))
