@@ -1,0 +1,446 @@
+# MyGreatCircle Specification
+
+## Overview
+
+MyGreatCircle is a web application that visualizes personal location history as beautiful great circle arcs on a world map. Users enter a list of places they've lived, worked, or visited, and instantly receive stunning visualizations showing their life journey connected by geodesic paths across the globe.
+
+The application requires no account, no database, and generates all outputs instantly in the browser. The name references the great circle paths that connect places on a sphere—the shortest distance between two points on Earth, rendered as elegant curved arcs.
+
+## User Stories
+
+### US-001: Enter Places
+As a user, I want to enter a list of places I've lived or visited so that I can visualize my life journey.
+
+**Acceptance Criteria:**
+- A text area accepts multiple lines, one place per line
+- Places can optionally include year or year range (e.g., "London 1990-1995")
+- Places are geocoded automatically upon submission
+- Ambiguous places show alternatives for user selection
+- Original text is preserved if user wants to edit the list
+
+### US-002: View Visualization
+As a user, I want to see my places connected by great circle arcs so that I can appreciate my life's geographic journey visually.
+
+**Acceptance Criteria:**
+- Map displays with selected visual theme
+- Great circles connect places in sequence
+- Place markers are visible at each location
+- Four themes available: Minimal Dark, Vibrant Neon, Vintage, Clean Modern
+- Theme switching is instant without re-rendering data
+- Map is responsive on mobile and desktop
+
+### US-003: View Insights
+As a user, I want to see statistics about my journey so that I can understand my travel patterns.
+
+**Acceptance Criteria:**
+- Total places count displayed
+- Unique countries count displayed
+- Total journey distance in kilometers
+- Longest single move highlighted with place names
+- Optional: time-based statistics if dates are provided
+- Statistics update when theme changes or places are refined
+
+### US-004: Download Fact Sheet
+As a user, I want to download a PDF fact sheet so that I can share or print my journey summary.
+
+**Acceptance Criteria:**
+- A4 portrait PDF generated
+- Contains map visualization, stats, and place list
+- Subtle watermark "mygreatcircle.com" in footer
+- Downloads immediately without account
+- PDF is vector-based for crisp printing
+
+### US-005: Download Poster
+As a user, I want to download a print-ready poster so that I can display my journey on a wall.
+
+**Acceptance Criteria:**
+- A3 landscape PDF generated
+- Full-bleed map visualization as hero element
+- Place sequence displayed in footer
+- Watermark "mygreatcircle.com" in corner
+- Downloads immediately without account
+- PDF is vector-based for crisp printing
+
+### US-006: Edit Journey
+As a user, I want to edit my place list after seeing the visualization so that I can refine incorrect geocoding or add missing places.
+
+**Acceptance Criteria:**
+- "Edit List" button returns to input state with text preserved
+- Original text formatting is maintained
+- User can modify, add, or remove places
+- Re-submission triggers fresh geocoding
+
+### US-007: Resolve Ambiguous Places
+As a user, I want to select correct alternatives when a place name is ambiguous so that my visualization is accurate.
+
+**Acceptance Criteria:**
+- Low-confidence geocodes show a warning indicator
+- Clicking a place reveals alternative matching locations
+- User can select the correct match
+- Selection updates the visualization immediately
+
+## Technical Requirements
+
+### TR-001: Geocoding
+- Use Nominatim (OpenStreetMap) for geocoding
+- Implement in-memory LRU cache with 7-day TTL (10,000 entries max)
+- Manage rate limiting to stay within Nominatim's 1 request/second limit
+- Cache results to reduce API calls and latency
+- Handle timeout and network errors gracefully
+
+### TR-002: Client-Side Processing
+- Visualization rendered with D3.js
+- PDF generation with jsPDF + svg2pdf.js
+- No server-side processing for PDFs
+- All computation happens in the browser
+- Generate unique IDs using UUID for place tracking
+
+### TR-003: Stateless Architecture
+- No user accounts required for MVP
+- No database for MVP (future enhancement)
+- Session data lives only in browser
+- All state managed client-side with React hooks
+- Shareable URLs possible via future enhancement
+
+### TR-004: Responsive Design
+- Layout works on mobile, tablet, and desktop
+- Header pinned to top, footer to bottom
+- Main content scrolls or pages as needed
+- Touch-friendly interface for mobile
+
+### TR-005: Performance
+- Page load and initial interaction < 1 second
+- Geocoding requests batched where possible
+- Cache hits should return instantly
+- PDF generation completes in < 5 seconds
+
+### TR-006: Accessibility
+- Semantic HTML structure
+- Color contrast meets WCAG AA standards
+- Keyboard navigation support
+- Alt text for all meaningful images
+
+## Data Model
+
+### Client-Side Types
+
+```typescript
+interface Place {
+  id: string;                      // Generated UUID
+  rawInput: string;                // Original user text
+  name: string;                    // Parsed place name
+  yearStart?: number;              // Optional start year
+  yearEnd?: number;                // Optional end year
+  coordinates: [number, number];   // [longitude, latitude]
+  confidence: 'high' | 'low';      // Geocoding confidence
+  alternatives?: GeocodingResult[];// Other possible matches
+}
+
+interface Journey {
+  places: Place[];
+  theme: 'minimal' | 'neon' | 'vintage' | 'modern';
+}
+
+interface Insights {
+  totalPlaces: number;
+  countries: string[];
+  totalDistanceKm: number;
+  longestLegKm: number;
+  longestLegFrom: string;
+  longestLegTo: string;
+  yearsSpanned?: number;
+  longestStay?: { place: string; years: number };
+}
+
+interface GeocodingResult {
+  name: string;
+  lat: number;
+  lng: number;
+  confidence: 'high' | 'low';
+  boundingbox?: [number, number, number, number];
+}
+```
+
+## API Specification
+
+### Health Endpoint
+
+```
+GET /api/health
+
+Response:
+{
+  "status": "ok"
+}
+```
+
+### Geocoding Endpoint
+
+```
+POST /api/geocode
+
+Request:
+{
+  "query": "Cape Town, South Africa"
+}
+
+Response:
+{
+  "results": [
+    {
+      "name": "Cape Town, Western Cape, South Africa",
+      "lat": -33.9249,
+      "lng": 18.4241,
+      "confidence": "high"
+    }
+  ],
+  "cached": true
+}
+```
+
+### Future API Endpoints
+
+Reserved for future implementation under `/api/v1/`:
+- User accounts and journey persistence
+- Journey sharing with short URLs
+- Analytics and usage tracking
+
+## Architecture
+
+### System Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Browser (Client)                         │
+├─────────────────────────────────────────────────────────────────┤
+│  React + Chakra UI                                               │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ Place Input │→ │ Map Preview │→ │ PDF Generation          │  │
+│  │ (textarea)  │  │ (D3.js SVG) │  │ (jsPDF + svg2pdf.js)    │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│       ↓                                        ↓                   │
+│   Input Parser         D3 Visualization   SVG → PDF              │
+│   Place matching       Theme rendering    Client-side            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ /api/geocode
+┌─────────────────────────────────────────────────────────────────┐
+│                         Go Backend                               │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ Static File │  │ Geocode     │  │ Future API              │  │
+│  │ Server      │  │ Proxy+Cache │  │ Endpoints               │  │
+│  │ (Vite dist) │  │ (Nominatim) │  │ (accounts, sharing)     │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ (rate-limited, cached)
+                       ┌─────────────┐
+                       │ Nominatim   │
+                       │ (external)  │
+                       └─────────────┘
+```
+
+### Key Characteristics
+- Stateless (no database for MVP)
+- No user accounts
+- Client-side rendering and PDF generation
+- Backend is thin: static files + geocoding proxy with caching
+
+## Project Structure
+
+```
+MyGreatCircle/
+├── .github/
+│   └── workflows/
+│       ├── test.yml                  # Go tests + lint on PR
+│       ├── build.yml                 # Multi-platform build verification
+│       └── release.yml               # Tagged releases → packages
+├── cmd/
+│   └── mygreatcircle/
+│       └── main.go                   # Entry point, CLI flags
+├── internal/
+│   ├── api/
+│   │   ├── server.go                 # HTTP server setup, routing
+│   │   ├── handlers.go               # Health check endpoint
+│   │   └── geocode.go                # Nominatim proxy with caching
+│   └── cache/
+│       └── lru.go                    # LRU cache with TTL support
+├── web/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── PlaceInput.jsx        # Text input with parser
+│   │   │   ├── MapVisualization.jsx  # D3.js visualization
+│   │   │   ├── ThemeSelector.jsx     # Theme toggle
+│   │   │   ├── PlaceList.jsx         # Place list with alternatives
+│   │   │   ├── InsightsPanel.jsx     # Journey statistics
+│   │   │   ├── OutputCards.jsx       # PDF download cards
+│   │   │   ├── EmailModal.jsx        # Email capture for poster
+│   │   │   └── Footer.jsx            # Branding footer
+│   │   ├── hooks/
+│   │   │   ├── useGeocoding.js       # Geocoding API integration
+│   │   │   └── usePdfGeneration.js   # PDF generation logic
+│   │   ├── lib/
+│   │   │   ├── parser.js             # Parse place input text
+│   │   │   ├── themes.js             # Visual theme definitions
+│   │   │   ├── geo.js                # Great circle math, distance, insights
+│   │   │   └── topo/world.json       # World map TopoJSON
+│   │   ├── App.jsx                   # Main app component, state management
+│   │   └── main.jsx                  # React entry point
+│   ├── public/
+│   │   └── favicon.ico
+│   ├── dist/                         # Built frontend (Vite)
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+├── docs/
+│   ├── mkdocs.yml                    # MkDocs configuration
+│   └── docs/
+│       ├── index.md                  # User guide
+│       ├── developer.md              # Developer guide
+│       ├── architecture.md           # Architecture details
+│       └── api.md                    # API documentation
+├── scripts/
+│   └── build-packages.sh             # Release packaging script
+├── flake.nix                         # Nix dev environment
+├── flake.lock
+├── Makefile                          # Development tasks
+├── .pre-commit-config.yaml           # Code quality checks
+├── .exrc                             # Neovim key mappings
+├── .nvim.lua                         # Neovim config
+├── SPECIFICATION.md                  # This file
+├── PACKAGES.md                       # Package documentation
+├── README.md                         # Project overview
+└── go.mod                            # Go module definition
+```
+
+## Visualization Details
+
+### D3 Projection and Rendering
+
+- **Projection:** Equal Earth (`d3.geoEqualEarth()`)
+- **Great circles:** `d3.geoInterpolate()` for geodesic paths
+- **Rendering hierarchy:**
+  1. Background (theme-specific gradient or solid)
+  2. Land masses (subtle, de-emphasized)
+  3. Great circle arcs (hero element, prominent)
+  4. Place markers (dots at each location)
+  5. Labels (optional, theme-dependent)
+
+### Theme Specifications
+
+| Theme | Background | Land | Arcs | Points |
+|-------|------------|------|------|--------|
+| **Minimal Dark** | `#1a1a2e` → `#16213e` | `rgba(255,255,255,0.05)` | White, 1px, 60% opacity | White dots |
+| **Vibrant Neon** | `#0f0f23` | `rgba(255,255,255,0.08)` | Rainbow gradient + glow filter | Colored + glow |
+| **Vintage** | `#f4f1ea` (paper) | `#e8e0d0` with stroke | Sepia dashed `#5c4033` | Terracotta `#b85c38` |
+| **Clean Modern** | `#ffffff` → `#f8fafc` | `#e2e8f0` | Solid blue `#3b82f6` | Blue dots |
+
+## PDF Generation
+
+### Technology
+- **Library:** jsPDF + svg2pdf.js
+- **Execution:** Client-side (browser)
+- **Output:** Vector PDFs (crisp at any print size)
+
+### Fact Sheet (A4 Portrait)
+
+```
+┌────────────────────────────────────────┐
+│  MyGreatCircle                         │
+│  "Your Life in Places"                 │
+├────────────────────────────────────────┤
+│                                        │
+│         [Map Visualization]            │
+│         (40% of page height)           │
+│                                        │
+├────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐   │
+│  │ X Places     │  │ Y Countries  │   │
+│  └──────────────┘  └──────────────┘   │
+│  ┌──────────────┐  ┌──────────────┐   │
+│  │ N km total   │  │ M km longest │   │
+│  └──────────────┘  └──────────────┘   │
+├────────────────────────────────────────┤
+│  Your Places:                          │
+│  • Place 1                             │
+│  • Place 2 (years)                     │
+│  • ...                                 │
+├────────────────────────────────────────┤
+│  mygreatcircle.com                     │
+└────────────────────────────────────────┘
+```
+
+### Poster (A3 Landscape)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│                                                              │
+│                  [Full-bleed Map Visualization]              │
+│                  (Great circles as hero, 85% of area)        │
+│                                                              │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│  Place 1 → Place 2 → Place 3 → ...          mygreatcircle.com│
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Development Tooling
+
+### Nix Flake
+Provides reproducible development environment with:
+- Go 1.22+, Node.js 22, golangci-lint, gopls
+- `nix develop` enters the dev environment
+- All dependencies managed via Nix
+
+### Makefile Targets
+- `make dev` - Start backend + frontend dev servers
+- `make build` - Production binary with embedded web assets
+- `make test` - Run Go tests
+- `make lint` - Run linters
+- `make web-dev` - Frontend dev server only
+- `make web-build` - Build frontend for production
+
+### Pre-commit Hooks
+- Go: `go fmt`, `go vet`, `golangci-lint`
+- JavaScript/JSX: `prettier`, `eslint`
+- General: spell check, license headers
+
+### CI/CD Pipeline
+- **test.yml:** Runs on PRs, Go tests + lint
+- **build.yml:** Multi-platform build verification
+- **release.yml:** On version tags, builds packages for DEB, RPM, Flatpak
+
+### Neovim Integration
+- `.exrc` with leader+p shortcuts for common tasks
+- `.nvim.lua` with Go/JavaScript language settings
+- which-key bindings for navigation
+
+## Success Criteria
+
+1. User can enter places and see visualization in < 30 seconds
+2. All four themes render correctly and look distinctive
+3. PDFs generate client-side without server involvement
+4. Geocoding handles ambiguous places gracefully
+5. Responsive design works on mobile and desktop
+6. Great circles render correctly using proper geodesics
+7. Insights calculations are accurate
+8. Performance is snappy (< 1s first load, < 5s PDF generation)
+
+## Future Enhancements (Post-MVP)
+
+1. **Persistence:** Optional accounts, saved journeys
+2. **Sharing:** Short URLs (mygreatcircle.com/v/abc123)
+3. **Premium Features:** Additional themes, no watermarks, exclusive outputs
+4. **Physical Products:** Print-on-demand merchandise
+5. **Self-hosted Nominatim:** If rate limits become an issue
+6. **Analytics:** Anonymous usage insights
+7. **Social Sharing:** Preset templates for common journey patterns
+
+## Branding
+
+Footer on all pages and outputs:
+
+> Made with 💗 by [Kartoza](https://kartoza.com) | [Donate!](https://github.com/sponsors/kartoza) | [GitHub](https://github.com/kartoza/MyGreatCircle)
