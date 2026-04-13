@@ -1,4 +1,4 @@
-import { Box, Text, VStack, Link, Wrap, WrapItem } from '@chakra-ui/react'
+import { Box, Text, VStack, Link, Wrap, WrapItem, Icon } from '@chakra-ui/react'
 
 /**
  * Format CO2 in kg to tonnes with 1 decimal place
@@ -11,14 +11,37 @@ function formatCO2(kg) {
 }
 
 /**
- * Generate array of tree icons, alternating between two types
+ * Evergreen tree SVG icon (like 🌲)
+ */
+function EvergreenTree({ size = 16, color = '#22c55e' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <path d="M12 2L4 14h5v8h6v-8h5L12 2z" />
+    </svg>
+  )
+}
+
+/**
+ * Deciduous tree SVG icon (like 🌳)
+ */
+function DeciduousTree({ size = 16, color = '#16a34a' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <circle cx="12" cy="8" r="6" />
+      <rect x="10" y="14" width="4" height="8" />
+    </svg>
+  )
+}
+
+/**
+ * Generate array of tree components, alternating between two types
  */
 function generateTreeIcons(count, maxVisible) {
   const visibleCount = Math.min(count, maxVisible)
   const icons = []
 
   for (let i = 0; i < visibleCount; i++) {
-    icons.push(i % 2 === 0 ? '🌲' : '🌳')
+    icons.push(i % 2 === 0 ? 'evergreen' : 'deciduous')
   }
 
   return icons
@@ -37,13 +60,21 @@ export function TreeGrid({ treeCount, co2Kg, maxVisible = 50, compact = false })
     return null
   }
 
-  // Compact mode: simple centered layout
+  // Compact mode: simple centered layout with SVG trees
   if (compact) {
     return (
-      <VStack spacing={1} align="center" w="100%">
-        <Text fontSize="md" letterSpacing="2px">
-          🌲🌳🌲🌳🌲🌳🌲🌳🌲
-        </Text>
+      <VStack spacing={2} align="center" w="100%">
+        <Box display="flex" justifyContent="center" gap={1}>
+          <EvergreenTree size={20} />
+          <DeciduousTree size={20} />
+          <EvergreenTree size={20} />
+          <DeciduousTree size={20} />
+          <EvergreenTree size={20} />
+          <DeciduousTree size={20} />
+          <EvergreenTree size={20} />
+          <DeciduousTree size={20} />
+          <EvergreenTree size={20} />
+        </Box>
         <Text fontSize="xs" color="gray.400">
           {formatCO2(co2Kg)} CO₂ · {treeCount} trees to offset
         </Text>
@@ -63,20 +94,24 @@ export function TreeGrid({ treeCount, co2Kg, maxVisible = 50, compact = false })
     <VStack spacing={2} align="stretch" w="100%">
       {/* Tree grid */}
       <Box>
-        <Wrap spacing={0.5} justify="flex-start">
-          {icons.map((icon, i) => (
+        <Wrap spacing={1} justify="flex-start">
+          {icons.map((type, i) => (
             <WrapItem key={i}>
-              <Text fontSize="sm" lineHeight={1}>
-                {icon}
-              </Text>
+              {type === 'evergreen' ? (
+                <EvergreenTree size={16} />
+              ) : (
+                <DeciduousTree size={16} />
+              )}
             </WrapItem>
           ))}
           {/* Faded placeholder slots for partial row */}
           {fadedSlots > 0 && Array.from({ length: fadedSlots }).map((_, i) => (
-            <WrapItem key={`faded-${i}`}>
-              <Text fontSize="sm" lineHeight={1} opacity={0.3}>
-                {i % 2 === 0 ? '🌲' : '🌳'}
-              </Text>
+            <WrapItem key={`faded-${i}`} opacity={0.3}>
+              {i % 2 === 0 ? (
+                <EvergreenTree size={16} />
+              ) : (
+                <DeciduousTree size={16} />
+              )}
             </WrapItem>
           ))}
         </Wrap>

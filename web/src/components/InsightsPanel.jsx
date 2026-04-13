@@ -35,13 +35,29 @@ function CompactStat({ label, value, sub }) {
   )
 }
 
+// SVG Seedling icon
+function SeedlingIcon({ size = 20, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {/* Stem */}
+      <path d="M12 22V12" />
+      {/* Left leaf */}
+      <path d="M12 12C12 12 8 10 6 6C10 6 12 10 12 12" fill={color} stroke="none" />
+      {/* Right leaf */}
+      <path d="M12 8C12 8 14 6 18 4C18 8 14 10 12 12" fill={color} stroke="none" />
+      {/* Ground */}
+      <path d="M8 22h8" />
+    </svg>
+  )
+}
+
 // Eco toggle button
 function EcoToggle({ isActive, onToggle }) {
   return (
     <Tooltip label={isActive ? 'Hide eco impact' : 'Show eco impact'}>
       <IconButton
         aria-label="Toggle eco impact"
-        icon={<Text fontSize="lg">🌱</Text>}
+        icon={<SeedlingIcon size={20} color={isActive ? 'white' : '#9CA3AF'} />}
         size="sm"
         variant="ghost"
         onClick={onToggle}
