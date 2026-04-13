@@ -52,9 +52,11 @@ export function TreeGrid({ treeCount, co2Kg, maxVisible = 50, compact = false })
       {/* Tree grid */}
       {compact ? (
         // Compact mode: simple inline display
-        <Text fontSize="lg" textAlign="center" letterSpacing="2px">
-          {icons.join('')}
-        </Text>
+        <Box textAlign="center" py={1}>
+          <span style={{ fontSize: '20px', letterSpacing: '4px' }}>
+            🌲🌳🌲🌳🌲🌳🌲🌳🌲
+          </span>
+        </Box>
       ) : (
         // Full mode: wrapped grid
         <Box>
