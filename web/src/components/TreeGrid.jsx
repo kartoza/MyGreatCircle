@@ -93,7 +93,7 @@ export function TreeGrid({ treeCount, co2Kg, maxVisible = 50, compact = false })
         color="gray.400"
         textAlign={compact ? 'center' : 'left'}
       >
-        {formatCO2(co2Kg)} CO₂ · {treeCount} tree{treeCount !== 1 ? 's' : ''} to offset
+        {compact && '🌲🌳🌲🌳🌲🌳🌲🌳🌲 '}{formatCO2(co2Kg)} CO₂ · {treeCount} tree{treeCount !== 1 ? 's' : ''} to offset
       </Text>
 
       {/* Offset link */}
