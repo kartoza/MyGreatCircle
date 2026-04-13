@@ -8,7 +8,11 @@ import {
   StatNumber,
   StatHelpText,
   VStack,
+  IconButton,
+  Tooltip,
+  Collapse,
 } from '@chakra-ui/react'
+import { TreeGrid } from './TreeGrid'
 
 function formatDistance(km) {
   if (km >= 1000) {
@@ -31,7 +35,36 @@ function CompactStat({ label, value, sub }) {
   )
 }
 
-export function InsightsPanel({ stats, compact = false }) {
+// Eco toggle button
+function EcoToggle({ isActive, onToggle }) {
+  return (
+    <Tooltip label={isActive ? 'Hide eco impact' : 'Show eco impact'}>
+      <IconButton
+        aria-label="Toggle eco impact"
+        icon={<Text fontSize="lg">🌱</Text>}
+        size="sm"
+        variant="ghost"
+        onClick={onToggle}
+        bg={isActive ? 'green.600' : 'gray.700'}
+        opacity={isActive ? 1 : 0.5}
+        _hover={{
+          bg: isActive ? 'green.500' : 'gray.600',
+          opacity: 1,
+        }}
+        boxShadow={isActive ? '0 0 12px rgba(56, 161, 105, 0.4)' : 'none'}
+        borderRadius="full"
+      />
+    </Tooltip>
+  )
+}
+
+export function InsightsPanel({
+  stats,
+  compact = false,
+  ecoMode = false,
+  ecoStats = null,
+  onEcoToggle = () => {},
+}) {
   if (!stats || stats.totalPlaces === 0) {
     return null
   }
@@ -39,63 +72,112 @@ export function InsightsPanel({ stats, compact = false }) {
   // Compact mode for overlay
   if (compact) {
     return (
-      <HStack spacing={8} justify="center">
-        <CompactStat label="Places" value={stats.totalPlaces} />
-        <CompactStat label="Countries" value={stats.countries.length} />
-        <CompactStat label="Distance" value={formatDistance(stats.totalDistanceKm)} />
-        {stats.longestLegKm > 0 && (
-          <CompactStat label="Longest Move" value={formatDistance(stats.longestLegKm)} />
-        )}
-      </HStack>
+      <VStack spacing={3} align="stretch">
+        <HStack spacing={8} justify="center" align="center">
+          <CompactStat label="Places" value={stats.totalPlaces} />
+          <CompactStat label="Countries" value={stats.countries.length} />
+          <CompactStat label="Distance" value={formatDistance(stats.totalDistanceKm)} />
+          {stats.longestLegKm > 0 && (
+            <CompactStat label="Longest Move" value={formatDistance(stats.longestLegKm)} />
+          )}
+          <EcoToggle isActive={ecoMode} onToggle={onEcoToggle} />
+        </HStack>
+
+        <Collapse in={ecoMode} animateOpacity>
+          {ecoStats && ecoStats.treeCount > 0 && (
+            <Box
+              mt={2}
+              p={3}
+              bg="blackAlpha.400"
+              borderRadius="lg"
+              borderWidth="1px"
+              borderColor="green.700"
+            >
+              <TreeGrid
+                treeCount={ecoStats.treeCount}
+                co2Kg={ecoStats.totalCO2Kg}
+                compact={true}
+              />
+            </Box>
+          )}
+        </Collapse>
+      </VStack>
     )
   }
 
   // Full mode
   return (
-    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-      <Stat bg="gray.700" p={4} borderRadius="md">
-        <StatLabel color="gray.400">Places</StatLabel>
-        <StatNumber>{stats.totalPlaces}</StatNumber>
-        <StatHelpText>called home</StatHelpText>
-      </Stat>
+    <VStack spacing={4} align="stretch">
+      <HStack justify="space-between" align="center">
+        <Text fontSize="sm" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+          Journey Stats
+        </Text>
+        <EcoToggle isActive={ecoMode} onToggle={onEcoToggle} />
+      </HStack>
 
-      <Stat bg="gray.700" p={4} borderRadius="md">
-        <StatLabel color="gray.400">Countries</StatLabel>
-        <StatNumber>{stats.countries.length}</StatNumber>
-        <StatHelpText>explored</StatHelpText>
-      </Stat>
-
-      <Stat bg="gray.700" p={4} borderRadius="md">
-        <StatLabel color="gray.400">Total Journey</StatLabel>
-        <StatNumber>{formatDistance(stats.totalDistanceKm)}</StatNumber>
-        <StatHelpText>of life paths</StatHelpText>
-      </Stat>
-
-      {stats.longestLegKm > 0 && (
+      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
         <Stat bg="gray.700" p={4} borderRadius="md">
-          <StatLabel color="gray.400">Longest Move</StatLabel>
-          <StatNumber>{formatDistance(stats.longestLegKm)}</StatNumber>
-          <StatHelpText>
-            {stats.longestLegFrom} → {stats.longestLegTo}
-          </StatHelpText>
+          <StatLabel color="gray.400">Places</StatLabel>
+          <StatNumber>{stats.totalPlaces}</StatNumber>
+          <StatHelpText>called home</StatHelpText>
         </Stat>
-      )}
 
-      {stats.yearsSpanned && (
         <Stat bg="gray.700" p={4} borderRadius="md">
-          <StatLabel color="gray.400">Years Spanned</StatLabel>
-          <StatNumber>{stats.yearsSpanned}</StatNumber>
-          <StatHelpText>of memories</StatHelpText>
+          <StatLabel color="gray.400">Countries</StatLabel>
+          <StatNumber>{stats.countries.length}</StatNumber>
+          <StatHelpText>explored</StatHelpText>
         </Stat>
-      )}
 
-      {stats.longestStay && (
         <Stat bg="gray.700" p={4} borderRadius="md">
-          <StatLabel color="gray.400">Longest Stay</StatLabel>
-          <StatNumber>{stats.longestStay.years} years</StatNumber>
-          <StatHelpText>in {stats.longestStay.place}</StatHelpText>
+          <StatLabel color="gray.400">Total Journey</StatLabel>
+          <StatNumber>{formatDistance(stats.totalDistanceKm)}</StatNumber>
+          <StatHelpText>of life paths</StatHelpText>
         </Stat>
-      )}
-    </SimpleGrid>
+
+        {stats.longestLegKm > 0 && (
+          <Stat bg="gray.700" p={4} borderRadius="md">
+            <StatLabel color="gray.400">Longest Move</StatLabel>
+            <StatNumber>{formatDistance(stats.longestLegKm)}</StatNumber>
+            <StatHelpText>
+              {stats.longestLegFrom} → {stats.longestLegTo}
+            </StatHelpText>
+          </Stat>
+        )}
+
+        {stats.yearsSpanned && (
+          <Stat bg="gray.700" p={4} borderRadius="md">
+            <StatLabel color="gray.400">Years Spanned</StatLabel>
+            <StatNumber>{stats.yearsSpanned}</StatNumber>
+            <StatHelpText>of memories</StatHelpText>
+          </Stat>
+        )}
+
+        {stats.longestStay && (
+          <Stat bg="gray.700" p={4} borderRadius="md">
+            <StatLabel color="gray.400">Longest Stay</StatLabel>
+            <StatNumber>{stats.longestStay.years} years</StatNumber>
+            <StatHelpText>in {stats.longestStay.place}</StatHelpText>
+          </Stat>
+        )}
+      </SimpleGrid>
+
+      <Collapse in={ecoMode} animateOpacity>
+        {ecoStats && ecoStats.treeCount > 0 && (
+          <Box
+            p={4}
+            bg="gray.800"
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor="green.700"
+          >
+            <TreeGrid
+              treeCount={ecoStats.treeCount}
+              co2Kg={ecoStats.totalCO2Kg}
+              compact={false}
+            />
+          </Box>
+        )}
+      </Collapse>
+    </VStack>
   )
 }
