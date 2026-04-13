@@ -79,6 +79,18 @@ As a user, I want to select correct alternatives when a place name is ambiguous 
 - User can select the correct match
 - Selection updates the visualization immediately
 
+### US-008: View Eco Impact
+As a user, I want to see the environmental impact of my journey so that I can understand my carbon footprint and optionally take action to offset it.
+
+**Acceptance Criteria:**
+- A toggle (🌱 icon) in the InsightsPanel enables/disables eco impact display
+- When enabled, shows a forest grid visualization with tree icons
+- Each tree icon represents one tree's yearly CO2 absorption capacity (~21kg CO2)
+- CO2 is calculated based on estimated transport mode (car <100km, train 100-800km, flight >800km)
+- A link to One Tree Planted offset service is provided
+- Eco stats appear in PDF exports when enabled
+- Feature persists in localStorage with other journey data
+
 ## Technical Requirements
 
 ### TR-001: Geocoding
@@ -158,6 +170,20 @@ interface GeocodingResult {
   lng: number;
   confidence: 'high' | 'low';
   boundingbox?: [number, number, number, number];
+}
+
+interface EcoStats {
+  totalCO2Kg: number;           // Total journey CO2 emissions in kg
+  treeCount: number;            // Trees needed to offset
+  legs: LegEmission[];          // Per-leg breakdown
+}
+
+interface LegEmission {
+  from: string;
+  to: string;
+  distanceKm: number;
+  mode: 'car' | 'train' | 'flight';
+  co2Kg: number;
 }
 ```
 
@@ -276,6 +302,7 @@ MyGreatCircle/
 │   │   │   ├── InsightsPanel.jsx     # Journey statistics
 │   │   │   ├── OutputCards.jsx       # PDF download cards
 │   │   │   ├── EmailModal.jsx        # Email capture for poster
+│   │   │   ├── TreeGrid.jsx          # Forest grid eco visualization
 │   │   │   └── Footer.jsx            # Branding footer
 │   │   ├── hooks/
 │   │   │   ├── useGeocoding.js       # Geocoding API integration
@@ -284,6 +311,8 @@ MyGreatCircle/
 │   │   │   ├── parser.js             # Parse place input text
 │   │   │   ├── themes.js             # Visual theme definitions
 │   │   │   ├── geo.js                # Great circle math, distance, insights
+│   │   │   ├── carbon.js             # CO2 emissions calculations
+│   │   │   ├── carbon.test.js        # Carbon calculation tests
 │   │   │   └── topo/world.json       # World map TopoJSON
 │   │   ├── App.jsx                   # Main app component, state management
 │   │   └── main.jsx                  # React entry point
