@@ -74,6 +74,15 @@ export function usePdfGeneration() {
       // Map visualization
       if (svgElement) {
         const svgClone = svgElement.cloneNode(true)
+
+        // Ensure all arcs and points are fully visible (animations may leave them hidden)
+        svgClone.querySelectorAll('.arcs path').forEach(path => {
+          path.setAttribute('opacity', '1')
+        })
+        svgClone.querySelectorAll('.points circle').forEach(circle => {
+          circle.setAttribute('opacity', '1')
+        })
+
         const mapWidth = pageWidth - (margin * 2)
         const mapHeight = 100
 
@@ -215,6 +224,14 @@ export function usePdfGeneration() {
       // Full-bleed map (no margin for true full bleed effect)
       if (svgElement) {
         const svgClone = svgElement.cloneNode(true)
+
+        // Ensure all arcs and points are fully visible (animations may leave them hidden)
+        svgClone.querySelectorAll('.arcs path').forEach(path => {
+          path.setAttribute('opacity', '1')
+        })
+        svgClone.querySelectorAll('.points circle').forEach(circle => {
+          circle.setAttribute('opacity', '1')
+        })
 
         await pdf.svg(svgClone, {
           x: 0,
