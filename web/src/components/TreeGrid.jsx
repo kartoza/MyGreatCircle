@@ -50,25 +50,33 @@ export function TreeGrid({ treeCount, co2Kg, maxVisible = 50, compact = false })
   return (
     <VStack spacing={2} align="stretch" w="100%">
       {/* Tree grid */}
-      <Box>
-        <Wrap spacing={compact ? 1 : 0.5} justify={compact ? 'center' : 'flex-start'}>
-          {icons.map((icon, i) => (
-            <WrapItem key={i}>
-              <Text fontSize={compact ? 'md' : 'sm'} lineHeight={1}>
-                {icon}
-              </Text>
-            </WrapItem>
-          ))}
-          {/* Faded placeholder slots for partial row */}
-          {!compact && fadedSlots > 0 && Array.from({ length: fadedSlots }).map((_, i) => (
-            <WrapItem key={`faded-${i}`}>
-              <Text fontSize="sm" lineHeight={1} opacity={0.3}>
-                {i % 2 === 0 ? '🌲' : '🌳'}
-              </Text>
-            </WrapItem>
-          ))}
-        </Wrap>
-      </Box>
+      {compact ? (
+        // Compact mode: simple inline display
+        <Text fontSize="lg" textAlign="center" letterSpacing="2px">
+          {icons.join('')}
+        </Text>
+      ) : (
+        // Full mode: wrapped grid
+        <Box>
+          <Wrap spacing={0.5} justify="flex-start">
+            {icons.map((icon, i) => (
+              <WrapItem key={i}>
+                <Text fontSize="sm" lineHeight={1}>
+                  {icon}
+                </Text>
+              </WrapItem>
+            ))}
+            {/* Faded placeholder slots for partial row */}
+            {fadedSlots > 0 && Array.from({ length: fadedSlots }).map((_, i) => (
+              <WrapItem key={`faded-${i}`}>
+                <Text fontSize="sm" lineHeight={1} opacity={0.3}>
+                  {i % 2 === 0 ? '🌲' : '🌳'}
+                </Text>
+              </WrapItem>
+            ))}
+          </Wrap>
+        </Box>
+      )}
 
       {/* Overflow indicator */}
       {overflow > 0 && (
