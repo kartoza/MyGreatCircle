@@ -217,12 +217,12 @@ function App() {
     })
   }
 
-  const handleImportJSON = (event) => {
+  const handleImportJSON = async (event) => {
     const file = event.target.files?.[0]
     if (!file) return
 
     const reader = new FileReader()
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target.result)
         if (data.places && Array.isArray(data.places)) {
@@ -232,9 +232,7 @@ function App() {
             id: p.id || `imported-${i}`,
             confidence: p.confidence || 'high',
           }))
-          setPlaces(restoredPlaces)
-          setTheme(data.theme || 'minimal')
-          setEcoMode(data.ecoMode || false)
+
           // Reconstruct inputText from rawInput or name with optional years
           const reconstructedText = restoredPlaces.map(p => {
             if (p.rawInput) return p.rawInput
@@ -244,15 +242,66 @@ function App() {
             }
             return text
           }).join('\n')
+
+          setTheme(data.theme || 'minimal')
+          setEcoMode(data.ecoMode || false)
           setInputText(reconstructedText)
           setShowDemo(false)
           setShowWelcome(false)
-          toast({
-            title: 'Journey imported!',
-            description: `Loaded ${restoredPlaces.length} places.`,
-            status: 'success',
-            duration: 3000,
-          })
+
+          // Check if places need geocoding (missing coordinates)
+          const needsGeocoding = restoredPlaces.some(p => !p.coordinates)
+
+          if (needsGeocoding) {
+            // Run full geocoding flow like "Map My Places"
+            setMapMode('loading')
+            setGeocodingProgress({ current: 0, total: restoredPlaces.length, percent: 0, places: [] })
+
+            try {
+              const parsed = parsePlaceInput(reconstructedText)
+              const geocoded = await geocodePlaces(parsed, (progressPlaces, percent, current, total) => {
+                const validPlaces = progressPlaces.filter(p => p.coordinates)
+                setPlaces(validPlaces)
+                setGeocodingProgress({ current, total, percent: Math.round(percent * 100), places: progressPlaces })
+              })
+
+              setGeocodingProgress(null)
+              setPlaces([])
+              await new Promise(resolve => setTimeout(resolve, 100))
+              setPlaces(geocoded)
+              setMapMode('complete')
+
+              toast({
+                title: 'Journey imported!',
+                description: `Mapped ${geocoded.filter(p => p.coordinates).length} of ${geocoded.length} places.`,
+                status: 'success',
+                duration: 3000,
+              })
+            } catch (error) {
+              setGeocodingProgress(null)
+              setMapMode('complete')
+              toast({
+                title: 'Import partially failed',
+                description: error.message,
+                status: 'warning',
+                duration: 5000,
+              })
+            }
+          } else {
+            // Places already have coordinates - trigger map animation
+            setMapMode('loading')
+            setPlaces([])
+            await new Promise(resolve => setTimeout(resolve, 100))
+            setPlaces(restoredPlaces)
+            setMapMode('complete')
+
+            toast({
+              title: 'Journey imported!',
+              description: `Loaded ${restoredPlaces.length} places.`,
+              status: 'success',
+              duration: 3000,
+            })
+          }
         }
       } catch (error) {
         toast({
