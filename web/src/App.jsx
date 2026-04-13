@@ -180,11 +180,11 @@ function App() {
   }
 
   const handleDownloadFactSheet = async () => {
-    await generateFactSheet(svgRef.current, displayPlaces, stats, theme)
+    await generateFactSheet(svgRef.current, displayPlaces, stats, theme, ecoMode, ecoStats)
   }
 
   const handleDownloadPoster = async () => {
-    await generatePoster(svgRef.current, displayPlaces, theme)
+    await generatePoster(svgRef.current, displayPlaces, theme, ecoMode, ecoStats)
   }
 
   const handleExportJSON = () => {
