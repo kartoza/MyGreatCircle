@@ -188,30 +188,44 @@ function App() {
   }
 
   const handleExportJSON = () => {
-    const data = {
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      theme,
-      ecoMode,
-      places: places.map(p => ({
-        name: p.name,
-        rawInput: p.rawInput,
-        yearStart: p.yearStart,
-        yearEnd: p.yearEnd,
-        coordinates: p.coordinates,
-        geocodedName: p.geocodedName,
+    // Export as GeoJSON FeatureCollection
+    const geojson = {
+      type: 'FeatureCollection',
+      // Custom properties for MyGreatCircle
+      properties: {
+        name: 'MyGreatCircle Journey',
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        theme,
+        ecoMode,
+      },
+      features: places.map((p, index) => ({
+        type: 'Feature',
+        geometry: p.coordinates ? {
+          type: 'Point',
+          coordinates: p.coordinates, // [longitude, latitude]
+        } : null,
+        properties: {
+          id: p.id,
+          name: p.name,
+          rawInput: p.rawInput,
+          yearStart: p.yearStart || null,
+          yearEnd: p.yearEnd || null,
+          geocodedName: p.geocodedName || null,
+          order: index, // Preserve sequence order
+        },
       })),
     }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/geo+json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'my-journey.json'
+    a.download = 'my-journey.geojson'
     a.click()
     URL.revokeObjectURL(url)
     toast({
       title: 'Journey exported!',
-      description: 'Your journey has been saved as JSON.',
+      description: 'Your journey has been saved as GeoJSON.',
       status: 'success',
       duration: 3000,
     })
@@ -225,88 +239,111 @@ function App() {
     reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target.result)
-        if (data.places && Array.isArray(data.places)) {
-          // Restore with IDs
-          const restoredPlaces = data.places.map((p, i) => ({
-            ...p,
-            id: p.id || `imported-${i}`,
-            confidence: p.confidence || 'high',
-          }))
 
-          // Reconstruct inputText from rawInput or name with optional years
-          const reconstructedText = restoredPlaces.map(p => {
-            if (p.rawInput) return p.rawInput
-            let text = p.name
-            if (p.yearStart) {
-              text += ` ${p.yearStart}${p.yearEnd ? `-${p.yearEnd}` : ''}`
-            }
-            return text
-          }).join('\n')
+        // Require GeoJSON FeatureCollection format
+        if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
+          throw new Error('Invalid format. Expected GeoJSON FeatureCollection.')
+        }
 
-          setTheme(data.theme || 'minimal')
-          setEcoMode(data.ecoMode || false)
-          setInputText(reconstructedText)
-          setShowDemo(false)
-          setShowWelcome(false)
+        const props = data.properties || {}
+        const importedTheme = props.theme || 'minimal'
+        const importedEcoMode = props.ecoMode || false
 
-          // Check if places need geocoding (missing coordinates)
-          const needsGeocoding = restoredPlaces.some(p => !p.coordinates)
+        // Sort features by order property if present
+        const sortedFeatures = [...data.features].sort((a, b) => {
+          const orderA = a.properties?.order ?? Infinity
+          const orderB = b.properties?.order ?? Infinity
+          return orderA - orderB
+        })
 
-          if (needsGeocoding) {
-            // Run full geocoding flow like "Map My Places"
-            setMapMode('loading')
-            setGeocodingProgress({ current: 0, total: restoredPlaces.length, percent: 0, places: [] })
+        const restoredPlaces = sortedFeatures.map((feature, i) => ({
+          id: feature.properties?.id || `imported-${i}`,
+          name: feature.properties?.name || `Place ${i + 1}`,
+          rawInput: feature.properties?.rawInput,
+          yearStart: feature.properties?.yearStart,
+          yearEnd: feature.properties?.yearEnd,
+          geocodedName: feature.properties?.geocodedName,
+          coordinates: feature.geometry?.type === 'Point' ? feature.geometry.coordinates : null,
+          confidence: 'high',
+        }))
 
-            try {
-              const parsed = parsePlaceInput(reconstructedText)
-              const geocoded = await geocodePlaces(parsed, (progressPlaces, percent, current, total) => {
-                const validPlaces = progressPlaces.filter(p => p.coordinates)
-                setPlaces(validPlaces)
-                setGeocodingProgress({ current, total, percent: Math.round(percent * 100), places: progressPlaces })
-              })
+        if (restoredPlaces.length === 0) {
+          throw new Error('No places found in file')
+        }
 
-              setGeocodingProgress(null)
-              setPlaces([])
-              await new Promise(resolve => setTimeout(resolve, 100))
-              setPlaces(geocoded)
-              setMapMode('complete')
+        // Reconstruct inputText from rawInput or name with optional years
+        const reconstructedText = restoredPlaces.map(p => {
+          if (p.rawInput) return p.rawInput
+          let text = p.name
+          if (p.yearStart) {
+            text += ` ${p.yearStart}${p.yearEnd ? `-${p.yearEnd}` : ''}`
+          }
+          return text
+        }).join('\n')
 
-              toast({
-                title: 'Journey imported!',
-                description: `Mapped ${geocoded.filter(p => p.coordinates).length} of ${geocoded.length} places.`,
-                status: 'success',
-                duration: 3000,
-              })
-            } catch (error) {
-              setGeocodingProgress(null)
-              setMapMode('complete')
-              toast({
-                title: 'Import partially failed',
-                description: error.message,
-                status: 'warning',
-                duration: 5000,
-              })
-            }
-          } else {
-            // Places already have coordinates - trigger map animation
-            setMapMode('loading')
+        setTheme(importedTheme)
+        setEcoMode(importedEcoMode)
+        setInputText(reconstructedText)
+        setShowDemo(false)
+        setShowWelcome(false)
+
+        // Check if places need geocoding (missing coordinates)
+        const needsGeocoding = restoredPlaces.some(p => !p.coordinates)
+
+        if (needsGeocoding) {
+          // Run full geocoding flow like "Map My Places"
+          setMapMode('loading')
+          setGeocodingProgress({ current: 0, total: restoredPlaces.length, percent: 0, places: [] })
+
+          try {
+            const parsed = parsePlaceInput(reconstructedText)
+            const geocoded = await geocodePlaces(parsed, (progressPlaces, percent, current, total) => {
+              const validPlaces = progressPlaces.filter(p => p.coordinates)
+              setPlaces(validPlaces)
+              setGeocodingProgress({ current, total, percent: Math.round(percent * 100), places: progressPlaces })
+            })
+
+            setGeocodingProgress(null)
             setPlaces([])
             await new Promise(resolve => setTimeout(resolve, 100))
-            setPlaces(restoredPlaces)
+            setPlaces(geocoded)
             setMapMode('complete')
 
             toast({
               title: 'Journey imported!',
-              description: `Loaded ${restoredPlaces.length} places.`,
+              description: `Mapped ${geocoded.filter(p => p.coordinates).length} of ${geocoded.length} places.`,
               status: 'success',
               duration: 3000,
             })
+          } catch (error) {
+            setGeocodingProgress(null)
+            setMapMode('complete')
+            toast({
+              title: 'Import partially failed',
+              description: error.message,
+              status: 'warning',
+              duration: 5000,
+            })
           }
+        } else {
+          // Places already have coordinates - trigger map animation
+          setMapMode('loading')
+          setPlaces([])
+          await new Promise(resolve => setTimeout(resolve, 100))
+          setPlaces(restoredPlaces)
+          setMapMode('complete')
+
+          toast({
+            title: 'Journey imported!',
+            description: `Loaded ${restoredPlaces.length} places.`,
+            status: 'success',
+            duration: 3000,
+          })
         }
       } catch (error) {
         toast({
           title: 'Import failed',
-          description: 'Invalid JSON file.',
+          description: error.message || 'Invalid file format.',
           status: 'error',
           duration: 5000,
         })
@@ -688,7 +725,7 @@ function App() {
       <input
         type="file"
         ref={fileInputRef}
-        accept=".json"
+        accept=".json,.geojson,application/geo+json"
         style={{ display: 'none' }}
         onChange={handleImportJSON}
       />
