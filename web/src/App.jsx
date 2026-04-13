@@ -235,6 +235,16 @@ function App() {
           setPlaces(restoredPlaces)
           setTheme(data.theme || 'minimal')
           setEcoMode(data.ecoMode || false)
+          // Reconstruct inputText from rawInput or name with optional years
+          const reconstructedText = restoredPlaces.map(p => {
+            if (p.rawInput) return p.rawInput
+            let text = p.name
+            if (p.yearStart) {
+              text += ` ${p.yearStart}${p.yearEnd ? `-${p.yearEnd}` : ''}`
+            }
+            return text
+          }).join('\n')
+          setInputText(reconstructedText)
           setShowDemo(false)
           setShowWelcome(false)
           toast({
