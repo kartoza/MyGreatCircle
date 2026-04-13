@@ -43,6 +43,7 @@ import { usePdfGeneration } from './hooks/usePdfGeneration'
 
 import { parsePlaceInput } from './lib/parser'
 import { computeJourneyStats } from './lib/geo'
+import { calculateJourneyEmissions } from './lib/carbon'
 
 // Demo journey to show on first load
 const DEMO_PLACES = [
@@ -64,6 +65,7 @@ function App() {
   // Progressive geocoding state
   const [geocodingProgress, setGeocodingProgress] = useState(null) // { current, total, percent, places }
   const [mapMode, setMapMode] = useState('complete') // 'loading' or 'complete'
+  const [ecoMode, setEcoMode] = useState(false)
 
   const svgRef = useRef(null)
   const mapContainerRef = useRef(null)
@@ -79,6 +81,7 @@ function App() {
 
   const displayPlaces = showDemo && places.length === 0 ? DEMO_PLACES : places
   const stats = useMemo(() => computeJourneyStats(displayPlaces), [displayPlaces])
+  const ecoStats = useMemo(() => calculateJourneyEmissions(displayPlaces), [displayPlaces])
 
   // Responsive map sizing
   useEffect(() => {
@@ -100,10 +103,11 @@ function App() {
         places,
         theme,
         inputText,
+        ecoMode,
         savedAt: new Date().toISOString(),
       }))
     }
-  }, [places, theme, inputText])
+  }, [places, theme, inputText, ecoMode])
 
   // Restore from localStorage on mount
   useEffect(() => {
@@ -115,6 +119,7 @@ function App() {
           setPlaces(data.places)
           setTheme(data.theme || 'minimal')
           setInputText(data.inputText || '')
+          setEcoMode(data.ecoMode || false)
           setShowDemo(false)
           setShowWelcome(false)
           toast({
@@ -187,6 +192,7 @@ function App() {
       version: '1.0',
       exportedAt: new Date().toISOString(),
       theme,
+      ecoMode,
       places: places.map(p => ({
         name: p.name,
         rawInput: p.rawInput,
@@ -228,6 +234,7 @@ function App() {
           }))
           setPlaces(restoredPlaces)
           setTheme(data.theme || 'minimal')
+          setEcoMode(data.ecoMode || false)
           setShowDemo(false)
           setShowWelcome(false)
           toast({
@@ -508,7 +515,13 @@ function App() {
             pointerEvents="auto"
             maxW="500px"
           >
-            <InsightsPanel stats={stats} compact />
+            <InsightsPanel
+              stats={stats}
+              compact
+              ecoMode={ecoMode}
+              ecoStats={ecoStats}
+              onEcoToggle={() => setEcoMode(!ecoMode)}
+            />
           </Box>
 
           {/* Action buttons */}
