@@ -136,3 +136,17 @@ export const THEME_IDS = Object.keys(THEMES)
 export function getTheme(id) {
   return THEMES[id] || THEMES.minimal
 }
+
+/**
+ * Get the primary background color for a theme (for PDF full bleed)
+ * @param {string} id - Theme ID
+ * @returns {string} - Hex color string
+ */
+export function getThemeBackgroundColor(id) {
+  const theme = getTheme(id)
+  if (theme.background.type === 'solid') {
+    return theme.background.color
+  }
+  // For gradients, return the first color
+  return theme.background.colors[0]
+}
