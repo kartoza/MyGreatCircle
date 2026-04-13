@@ -37,48 +37,50 @@ export function TreeGrid({ treeCount, co2Kg, maxVisible = 50, compact = false })
     return null
   }
 
-  const treesPerRow = compact ? 3 : 10
-  const displayCount = compact ? Math.min(treeCount, 9) : Math.min(treeCount, maxVisible)
-  const icons = generateTreeIcons(displayCount, maxVisible)
-  const overflow = treeCount > maxVisible && !compact ? treeCount - maxVisible : 0
+  // Compact mode: simple centered layout
+  if (compact) {
+    return (
+      <VStack spacing={1} align="center" w="100%">
+        <Text fontSize="md" letterSpacing="2px">
+          🌲🌳🌲🌳🌲🌳🌲🌳🌲
+        </Text>
+        <Text fontSize="xs" color="gray.400">
+          {formatCO2(co2Kg)} CO₂ · {treeCount} trees to offset
+        </Text>
+      </VStack>
+    )
+  }
 
-  // Calculate how many icons should be faded (partial row)
-  const fullRows = Math.floor(displayCount / treesPerRow)
+  // Full mode calculations
+  const displayCount = Math.min(treeCount, maxVisible)
+  const icons = generateTreeIcons(displayCount, maxVisible)
+  const overflow = treeCount > maxVisible ? treeCount - maxVisible : 0
+  const treesPerRow = 10
   const partialRowCount = displayCount % treesPerRow
   const fadedSlots = partialRowCount > 0 ? treesPerRow - partialRowCount : 0
 
   return (
     <VStack spacing={2} align="stretch" w="100%">
       {/* Tree grid */}
-      {compact ? (
-        // Compact mode: simple inline display
-        <Box textAlign="center" py={1}>
-          <span style={{ fontSize: '20px', letterSpacing: '4px' }}>
-            🌲🌳🌲🌳🌲🌳🌲🌳🌲
-          </span>
-        </Box>
-      ) : (
-        // Full mode: wrapped grid
-        <Box>
-          <Wrap spacing={0.5} justify="flex-start">
-            {icons.map((icon, i) => (
-              <WrapItem key={i}>
-                <Text fontSize="sm" lineHeight={1}>
-                  {icon}
-                </Text>
-              </WrapItem>
-            ))}
-            {/* Faded placeholder slots for partial row */}
-            {fadedSlots > 0 && Array.from({ length: fadedSlots }).map((_, i) => (
-              <WrapItem key={`faded-${i}`}>
-                <Text fontSize="sm" lineHeight={1} opacity={0.3}>
-                  {i % 2 === 0 ? '🌲' : '🌳'}
-                </Text>
-              </WrapItem>
-            ))}
-          </Wrap>
-        </Box>
-      )}
+      <Box>
+        <Wrap spacing={0.5} justify="flex-start">
+          {icons.map((icon, i) => (
+            <WrapItem key={i}>
+              <Text fontSize="sm" lineHeight={1}>
+                {icon}
+              </Text>
+            </WrapItem>
+          ))}
+          {/* Faded placeholder slots for partial row */}
+          {fadedSlots > 0 && Array.from({ length: fadedSlots }).map((_, i) => (
+            <WrapItem key={`faded-${i}`}>
+              <Text fontSize="sm" lineHeight={1} opacity={0.3}>
+                {i % 2 === 0 ? '🌲' : '🌳'}
+              </Text>
+            </WrapItem>
+          ))}
+        </Wrap>
+      </Box>
 
       {/* Overflow indicator */}
       {overflow > 0 && (
@@ -88,27 +90,21 @@ export function TreeGrid({ treeCount, co2Kg, maxVisible = 50, compact = false })
       )}
 
       {/* Stats text */}
-      <Text
-        fontSize={compact ? 'xs' : 'sm'}
-        color="gray.400"
-        textAlign={compact ? 'center' : 'left'}
-      >
-        {compact && '🌲🌳🌲🌳🌲🌳🌲🌳🌲 '}{formatCO2(co2Kg)} CO₂ · {treeCount} tree{treeCount !== 1 ? 's' : ''} to offset
+      <Text fontSize="sm" color="gray.400">
+        {formatCO2(co2Kg)} CO₂ · {treeCount} trees to offset
       </Text>
 
       {/* Offset link */}
-      {!compact && (
-        <Link
-          href="https://onetreeplanted.org/products/plant-trees"
-          target="_blank"
-          rel="noopener noreferrer"
-          fontSize="sm"
-          color="gray.500"
-          _hover={{ color: 'teal.300' }}
-        >
-          Offset your journey →
-        </Link>
-      )}
+      <Link
+        href="https://onetreeplanted.org/products/plant-trees"
+        target="_blank"
+        rel="noopener noreferrer"
+        fontSize="sm"
+        color="gray.500"
+        _hover={{ color: 'teal.300' }}
+      >
+        Offset your journey →
+      </Link>
     </VStack>
   )
 }
