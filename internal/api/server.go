@@ -29,7 +29,6 @@ func NewServer(port int, webDir string, placeRepo db.PlaceRepository) *Server {
 func (s *Server) setupRoutes() {
 	// API routes
 	s.mux.HandleFunc("GET /api/health", s.handleHealth)
-	s.mux.HandleFunc("POST /api/geocode", s.handleGeocode)
 	s.mux.HandleFunc("POST /api/places/lookup", s.handlePlacesLookup)
 	s.mux.HandleFunc("POST /api/places/submit", s.handlePlacesSubmit)
 
