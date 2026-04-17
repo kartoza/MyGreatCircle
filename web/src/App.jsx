@@ -40,6 +40,7 @@ import { PlaceInput } from './components/PlaceInput'
 
 import { useGeocoding } from './hooks/useGeocoding'
 import { usePdfGeneration } from './hooks/usePdfGeneration'
+import { useGifGeneration } from './hooks/useGifGeneration'
 
 import { parsePlaceInput } from './lib/parser'
 import { computeJourneyStats } from './lib/geo'
@@ -78,6 +79,7 @@ function App() {
   const toast = useToast()
   const { geocodePlaces, retryPlace, isLoading: isGeocoding } = useGeocoding()
   const { generateFactSheet, generatePoster, isGenerating } = usePdfGeneration()
+  const { generateGif, isGenerating: isGeneratingGif, progress: gifProgress } = useGifGeneration()
   const [retryingPlaceId, setRetryingPlaceId] = useState(null)
 
   const displayPlaces = showDemo && places.length === 0 ? DEMO_PLACES : places
@@ -186,6 +188,15 @@ function App() {
 
   const handleDownloadPoster = async () => {
     await generatePoster(svgRef.current, displayPlaces, theme, ecoMode, ecoStats)
+  }
+
+  const handleDownloadGif = async () => {
+    await generateGif(displayPlaces, theme, {
+      width: 800,
+      height: 450,
+      frameDelay: 80,
+      arcSegmentsPerFrame: 5,
+    })
   }
 
   const handleRetryPlace = async (place) => {
@@ -755,7 +766,10 @@ function App() {
             <OutputCards
               onDownloadFactSheet={handleDownloadFactSheet}
               onDownloadPoster={handleDownloadPoster}
+              onDownloadGif={handleDownloadGif}
               isGenerating={isGenerating}
+              isGeneratingGif={isGeneratingGif}
+              gifProgress={gifProgress}
             />
           </ModalBody>
         </ModalContent>

@@ -6,6 +6,7 @@ import {
   Heading,
   Text,
   Button,
+  Progress,
   useDisclosure,
 } from '@chakra-ui/react'
 import { EmailModal } from './EmailModal'
@@ -13,7 +14,10 @@ import { EmailModal } from './EmailModal'
 export function OutputCards({
   onDownloadFactSheet,
   onDownloadPoster,
+  onDownloadGif,
   isGenerating,
+  isGeneratingGif,
+  gifProgress,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -26,7 +30,7 @@ export function OutputCards({
 
   return (
     <>
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+      <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6}>
         {/* Fact Sheet */}
         <Box
           bg="gray.700"
@@ -107,6 +111,62 @@ export function OutputCards({
               fontSize="sm"
             >
               Download PDF
+            </Button>
+          </VStack>
+        </Box>
+
+        {/* Animated GIF */}
+        <Box
+          bg="gray.700"
+          p={6}
+          borderRadius="lg"
+          border="1px solid"
+          borderColor="purple.500"
+          transition="all 0.2s"
+          display="flex"
+          flexDirection="column"
+          _hover={{
+            borderColor: 'purple.400',
+            transform: 'translateY(-2px)',
+            boxShadow: 'lg',
+          }}
+        >
+          <VStack spacing={4} align="stretch" flex="1">
+            <Box textAlign="center">
+              <Heading size="md">Animated GIF</Heading>
+              <Text fontSize="sm" color="gray.400" mt={1}>
+                Watch your journey unfold
+              </Text>
+            </Box>
+            <Text fontSize="sm" color="green.400" textAlign="center">
+              Free
+            </Text>
+            <Box flex="1" />
+            {isGeneratingGif && (
+              <Box>
+                <Progress
+                  value={gifProgress}
+                  size="sm"
+                  colorScheme="purple"
+                  borderRadius="full"
+                  mb={2}
+                />
+                <Text fontSize="xs" color="gray.400" textAlign="center">
+                  {gifProgress}% complete
+                </Text>
+              </Box>
+            )}
+            <Button
+              colorScheme="purple"
+              onClick={onDownloadGif}
+              isLoading={isGeneratingGif}
+              loadingText="Rendering..."
+              width="100%"
+              px={8}
+              py={6}
+              fontSize="sm"
+            >
+              Download GIF
             </Button>
           </VStack>
         </Box>
