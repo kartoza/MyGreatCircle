@@ -284,7 +284,8 @@ export function useGeocoding() {
     }
 
     setIsLoading(false)
-    return geocodedPlaces
+    // Filter out any null/undefined entries (sparse array gaps)
+    return geocodedPlaces.filter(p => p != null)
   }, [geocodePlace])
 
   /**

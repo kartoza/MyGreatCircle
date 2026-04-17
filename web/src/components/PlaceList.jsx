@@ -89,9 +89,9 @@ export function PlaceList({ places, onPlaceClick, onRetryPlace, retryingPlaceId 
       <Text fontSize="sm" fontWeight="bold" color="gray.400" mb={1}>
         Your Places ({places.length})
       </Text>
-      {places.map((place, index) => (
+      {places.filter(p => p != null).map((place, index) => (
         <HStack
-          key={place.id}
+          key={place.id || index}
           p={3}
           bg="gray.800"
           borderRadius="md"
