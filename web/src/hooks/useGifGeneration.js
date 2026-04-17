@@ -232,7 +232,7 @@ export function useGifGeneration() {
         const boxWidth = 180
         const boxHeight = 50
         const boxX = width - boxWidth - padding
-        const boxY = height - boxHeight - padding
+        const boxY = height - boxHeight - padding - 45 // Move up to make room for branding
 
         // Semi-transparent background
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
@@ -257,6 +257,35 @@ export function useGifGeneration() {
         ctx.fillText(`${ecoStats.treeCount} trees to offset ${co2Text}`, boxX + boxWidth / 2, boxY + 38)
       }
 
+      // Helper to draw branding
+      const drawBranding = () => {
+        const padding = 15
+        const brandY = height - padding
+
+        // Semi-transparent background for branding
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+        ctx.beginPath()
+        ctx.roundRect(width - 200 - padding, height - 45, 200, 40, 8)
+        ctx.fill()
+
+        // "Made with ❤️ by Kartoza"
+        ctx.font = '12px sans-serif'
+        ctx.textAlign = 'center'
+        const brandX = width - 100 - padding
+
+        ctx.fillStyle = '#14b8a6' // teal
+        ctx.fillText('Made with', brandX - 35, brandY - 18)
+        ctx.fillStyle = '#ef4444' // red heart
+        ctx.fillText('❤️', brandX, brandY - 18)
+        ctx.fillStyle = '#14b8a6'
+        ctx.fillText('by Kartoza', brandX + 40, brandY - 18)
+
+        // URL
+        ctx.font = '10px sans-serif'
+        ctx.fillStyle = '#9ca3af'
+        ctx.fillText('mygreatcircle.kartoza.com', brandX, brandY - 3)
+      }
+
       // Generate frames
       const framesCount = Math.ceil(totalSegments / arcSegmentsPerFrame) + validPlaces.length + 10
 
@@ -264,6 +293,7 @@ export function useGifGeneration() {
       for (let i = 0; i < 5; i++) {
         drawBaseMap()
         drawPoints(0) // Show first point
+        drawBranding()
         gif.addFrame(ctx, { copy: true, delay: frameDelay })
       }
 
@@ -286,6 +316,7 @@ export function useGifGeneration() {
 
         drawArcs(currentSegment)
         drawPoints(currentPlaceIndex)
+        drawBranding()
 
         gif.addFrame(ctx, { copy: true, delay: frameDelay })
         currentSegment += arcSegmentsPerFrame
@@ -293,11 +324,12 @@ export function useGifGeneration() {
         setProgress(Math.min(90, Math.round((currentSegment / totalSegments) * 80)))
       }
 
-      // Final frames showing complete journey with eco stats
+      // Final frames showing complete journey with eco stats and branding
       for (let i = 0; i < 10; i++) {
         drawBaseMap()
         drawArcs(totalSegments)
         drawPoints(validPlaces.length - 1)
+        drawBranding()
         drawEcoStats()
         gif.addFrame(ctx, { copy: true, delay: frameDelay * 2 })
       }
