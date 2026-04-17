@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { jsPDF } from 'jspdf'
 import 'svg2pdf.js'
 import { getThemeBackgroundColor } from '../lib/themes'
+import { generateWordCloudPositions } from '../lib/wordcloud'
 
 /**
  * Convert hex color to RGB array for jsPDF
@@ -23,6 +24,44 @@ function formatCO2ForPdf(kg) {
     return `${(kg / 1000).toFixed(1)}t`
   }
   return `${kg}kg`
+}
+
+/**
+ * Render word cloud of place names in margins around the map
+ */
+function renderWordCloud(pdf, places, mapBounds, pageSize, textColor) {
+  pdf.setFontSize(8)
+  pdf.setTextColor(153, 153, 153) // Light gray for low visual impact
+
+  const { positions, skipped } = generateWordCloudPositions(places, mapBounds, pageSize, {
+    getTextWidth: (text) => pdf.getTextWidth(text),
+    fontSize: 8,
+  })
+
+  for (const pos of positions) {
+    pdf.text(pos.text, pos.x, pos.y)
+  }
+
+  // Show overflow message if places were skipped
+  if (skipped.length > 0) {
+    pdf.setFontSize(7)
+    pdf.setTextColor(153, 153, 153)
+    const overflowText = `... and ${skipped.length} more places`
+    const textWidth = pdf.getTextWidth(overflowText)
+    pdf.text(overflowText, (pageSize.width - textWidth) / 2, mapBounds.y + mapBounds.height + 12)
+  }
+
+  // Restore text color
+  pdf.setTextColor(...textColor)
+}
+
+/**
+ * Render attribution for geocoding and map data
+ */
+function renderAttribution(pdf, x, y, mutedColor) {
+  pdf.setFontSize(7)
+  pdf.setTextColor(...mutedColor)
+  pdf.text('Geocoding by Nominatim · Map data © OpenStreetMap contributors', x, y)
 }
 
 /**
@@ -72,6 +111,8 @@ export function usePdfGeneration() {
       pdf.text('Your Life in Places', pageWidth / 2, 33, { align: 'center' })
 
       // Map visualization
+      const mapBounds = { x: margin, y: 45, width: pageWidth - (margin * 2), height: 100 }
+
       if (svgElement) {
         const svgClone = svgElement.cloneNode(true)
 
@@ -83,16 +124,16 @@ export function usePdfGeneration() {
           circle.setAttribute('opacity', '1')
         })
 
-        const mapWidth = pageWidth - (margin * 2)
-        const mapHeight = 100
-
         await pdf.svg(svgClone, {
-          x: margin,
-          y: 45,
-          width: mapWidth,
-          height: mapHeight,
+          x: mapBounds.x,
+          y: mapBounds.y,
+          width: mapBounds.width,
+          height: mapBounds.height,
         })
       }
+
+      // Word cloud of place names in margins
+      renderWordCloud(pdf, places, mapBounds, { width: pageWidth, height: pageHeight }, textColor)
 
       // Stats section
       const statsY = 155
@@ -151,27 +192,6 @@ export function usePdfGeneration() {
         ecoEndY = ecoY + 20
       }
 
-      // Places list
-      const listY = ecoEndY + 10
-      pdf.setFontSize(12)
-      pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(...textColor)
-      pdf.text('Your Places:', margin, listY)
-
-      pdf.setFontSize(10)
-      pdf.setFont('helvetica', 'normal')
-      pdf.setTextColor(...textColor)
-      places.forEach((place, i) => {
-        const y = listY + 8 + (i * 6)
-        if (y < pageHeight - 25) {
-          let text = `• ${place.name}`
-          if (place.yearStart) {
-            text += ` (${place.yearStart}${place.yearEnd ? `-${place.yearEnd}` : ''})`
-          }
-          pdf.text(text, margin, y)
-        }
-      })
-
       // Footer with Kartoza branding
       const footerY = pageHeight - 12
       pdf.setFontSize(9)
@@ -188,6 +208,9 @@ export function usePdfGeneration() {
       pdf.setFontSize(8)
       pdf.text('kartoza.com', margin, footerY + 5)
       pdf.text('mygreatcircle.com', pageWidth - margin, footerY, { align: 'right' })
+
+      // OSM/Nominatim attribution
+      renderAttribution(pdf, margin, footerY + 10, mutedColor)
 
       pdf.save('my-journey-factsheet.pdf')
     } finally {
@@ -220,6 +243,10 @@ export function usePdfGeneration() {
       // Determine text color based on background brightness
       const brightness = (r * 299 + g * 587 + b * 114) / 1000
       const textColor = brightness > 128 ? [80, 80, 80] : [200, 200, 200]
+      const mutedColor = brightness > 128 ? [100, 100, 100] : [160, 160, 160]
+
+      // Define map bounds for word cloud
+      const posterMapBounds = { x: 20, y: 15, width: pageWidth - 40, height: pageHeight - 50 }
 
       // Full-bleed map (no margin for true full bleed effect)
       if (svgElement) {
@@ -241,20 +268,19 @@ export function usePdfGeneration() {
         })
       }
 
-      // Bottom bar
+      // Word cloud of place names in margins
+      renderWordCloud(pdf, places, posterMapBounds, { width: pageWidth, height: pageHeight }, textColor)
+
+      // Bottom bar - eco stats only (place names now in word cloud)
       const footerY = pageHeight - 18
       pdf.setFontSize(10)
       pdf.setTextColor(...textColor)
 
-      const placeNames = places.map(p => p.name).join(' → ')
-      let footerText = placeNames.length > 60 ? placeNames.slice(0, 60) + '...' : placeNames
-
       // Add eco stats to footer if enabled
       if (ecoMode && ecoStats && ecoStats.treeCount > 0) {
-        footerText += `    🌲×${ecoStats.treeCount}  ${formatCO2ForPdf(ecoStats.totalCO2Kg)} CO₂`
+        const ecoText = `${ecoStats.treeCount} trees to offset ${formatCO2ForPdf(ecoStats.totalCO2Kg)} CO₂`
+        pdf.text(ecoText, 10, footerY)
       }
-
-      pdf.text(footerText, 10, footerY)
 
       // Kartoza branding on bottom right
       const brandY = pageHeight - 10
@@ -268,6 +294,9 @@ export function usePdfGeneration() {
       pdf.setTextColor(...textColor)
       pdf.setFontSize(8)
       pdf.text('kartoza.com | mygreatcircle.com', pageWidth - 10, brandY + 5, { align: 'right' })
+
+      // OSM/Nominatim attribution
+      renderAttribution(pdf, 10, pageHeight - 5, mutedColor)
 
       pdf.save('my-journey-poster.pdf')
     } finally {
