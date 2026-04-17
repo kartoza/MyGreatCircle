@@ -1,5 +1,6 @@
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
-const USER_AGENT = 'MyGreatCircle/1.0 (https://github.com/kartoza/MyGreatCircle)'
+// Note: User-Agent cannot be set in browser fetch (forbidden header)
+// We use Nominatim's recommended approach with email parameter instead
 
 // Error types for geocoding failures
 export const GeocodingErrorType = {
@@ -67,7 +68,10 @@ export async function geocodeWithNominatim(query, retries = 3) {
     const params = new URLSearchParams({
       q: query,
       format: 'json',
-      limit: '5'
+      limit: '5',
+      // Nominatim policy: identify your application
+      // Using a generic contact since User-Agent header can't be set in browser
+      email: 'mygreatcircle@kartoza.com'
     })
 
     const controller = new AbortController()
@@ -76,9 +80,6 @@ export async function geocodeWithNominatim(query, retries = 3) {
     let response
     try {
       response = await fetch(`${NOMINATIM_URL}?${params}`, {
-        headers: {
-          'User-Agent': USER_AGENT
-        },
         signal: controller.signal
       })
     } catch (e) {

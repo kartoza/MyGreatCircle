@@ -52,9 +52,9 @@ export function PlaceInput({ onSubmit, isLoading, initialValue = '', embedded = 
   const lineCount = inputText.split('\n').filter(l => l.trim()).length
 
   return (
-    <VStack spacing={6} align="stretch">
+    <VStack spacing={6} align="stretch" height="100%" flex="1">
       {!embedded && (
-        <Box textAlign="center">
+        <Box textAlign="center" flexShrink={0}>
           <Heading
             size="xl"
             mb={2}
@@ -69,8 +69,8 @@ export function PlaceInput({ onSubmit, isLoading, initialValue = '', embedded = 
         </Box>
       )}
 
-      <Box>
-        <Text mb={3} fontSize="sm" color="gray.400">
+      <Box flex="1" display="flex" flexDirection="column" minH={0}>
+        <Text mb={3} fontSize="sm" color="gray.400" flexShrink={0}>
           Enter places you've lived or visited, one per line.
           Dates are optional — add them like "London 1990" or "Paris 2000-2005".
         </Text>
@@ -79,7 +79,8 @@ export function PlaceInput({ onSubmit, isLoading, initialValue = '', embedded = 
           onChange={(e) => setInputText(e.target.value)}
           placeholder={PLACEHOLDER}
           size="lg"
-          minH={embedded ? '300px' : '250px'}
+          flex="1"
+          minH="150px"
           bg="whiteAlpha.100"
           border="1px solid"
           borderColor="whiteAlpha.200"
@@ -89,8 +90,9 @@ export function PlaceInput({ onSubmit, isLoading, initialValue = '', embedded = 
           fontSize="md"
           color="white"
           _placeholder={{ color: 'gray.500' }}
+          resize="none"
         />
-        <Box mt={3} display="flex" justifyContent="space-between" alignItems="center">
+        <Box mt={3} display="flex" justifyContent="space-between" alignItems="center" flexShrink={0}>
           <Text fontSize="sm" color="gray.500">
             {lineCount} {lineCount === 1 ? 'place' : 'places'} entered
           </Text>
@@ -113,6 +115,7 @@ export function PlaceInput({ onSubmit, isLoading, initialValue = '', embedded = 
         isLoading={isLoading}
         isDisabled={lineCount === 0}
         loadingText="Mapping your journey..."
+        flexShrink={0}
         _hover={{
           bgGradient: 'linear(to-r, teal.500, cyan.600)',
           transform: 'translateY(-2px)',

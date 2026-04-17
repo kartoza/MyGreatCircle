@@ -264,8 +264,12 @@ export function useGeocoding() {
         }
       } catch (e) {
         console.error(`Failed to geocode "${place.name}":`, e)
-        // Determine error type
-        const errorType = e instanceof GeocodingError ? e.type : GeocodingErrorType.NETWORK_ERROR
+        // Determine error type - check both instanceof and type property for robustness
+        // (instanceof can fail across module boundaries in some bundler configurations)
+        const knownErrorTypes = Object.values(GeocodingErrorType)
+        const errorType = (e instanceof GeocodingError || (e.type && knownErrorTypes.includes(e.type)))
+          ? e.type
+          : GeocodingErrorType.NETWORK_ERROR
         const errorMessage = e.message || 'Unknown error'
         geocodedPlaces[index] = {
           ...place,
@@ -318,7 +322,11 @@ export function useGeocoding() {
       }
     } catch (e) {
       console.error(`Retry failed for "${place.name}":`, e)
-      const errorType = e instanceof GeocodingError ? e.type : GeocodingErrorType.NETWORK_ERROR
+      // Determine error type - check both instanceof and type property for robustness
+      const knownErrorTypes = Object.values(GeocodingErrorType)
+      const errorType = (e instanceof GeocodingError || (e.type && knownErrorTypes.includes(e.type)))
+        ? e.type
+        : GeocodingErrorType.NETWORK_ERROR
       return {
         ...place,
         confidence: 'failed',

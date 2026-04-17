@@ -21,7 +21,8 @@ function getErrorInfo(errorType) {
     case GeocodingErrorType.NETWORK_ERROR:
       return { icon: '⚡', color: 'orange.400', label: 'Network error - click to retry', canRetry: true }
     default:
-      return { icon: '✗', color: 'red.400', label: 'Could not find location', canRetry: false }
+      // Unknown error type (or missing) - allow retry since we don't know the cause
+      return { icon: '?', color: 'orange.400', label: 'Error - click to retry', canRetry: true }
   }
 }
 

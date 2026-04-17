@@ -35,28 +35,34 @@ export function OutputCards({
           border="1px solid"
           borderColor="gray.600"
           transition="all 0.2s"
+          display="flex"
+          flexDirection="column"
           _hover={{
             borderColor: 'gray.500',
             transform: 'translateY(-2px)',
             boxShadow: 'lg',
           }}
         >
-          <VStack spacing={4} align="stretch">
-            <Box textAlign="center" minH="80px">
-              <Text fontSize="2xl" mb={2} aria-hidden="true" role="img">📄</Text>
+          <VStack spacing={4} align="stretch" flex="1">
+            <Box textAlign="center">
               <Heading size="md">Fact Sheet</Heading>
               <Text fontSize="sm" color="gray.400" mt={1}>
                 A4 PDF with map, stats & places
               </Text>
             </Box>
-            <Text fontSize="sm" color="green.400" textAlign="center" minH="20px">
+            <Text fontSize="sm" color="green.400" textAlign="center">
               Free
             </Text>
+            <Box flex="1" />
             <Button
               colorScheme="brand"
               onClick={onDownloadFactSheet}
               isLoading={isGenerating}
               loadingText="Generating..."
+              width="100%"
+              px={8}
+              py={6}
+              fontSize="sm"
             >
               Download PDF
             </Button>
@@ -71,28 +77,34 @@ export function OutputCards({
           border="1px solid"
           borderColor="gray.600"
           transition="all 0.2s"
+          display="flex"
+          flexDirection="column"
           _hover={{
             borderColor: 'gray.500',
             transform: 'translateY(-2px)',
             boxShadow: 'lg',
           }}
         >
-          <VStack spacing={4} align="stretch">
-            <Box textAlign="center" minH="80px">
-              <Text fontSize="2xl" mb={2} aria-hidden="true" role="img">🖼️</Text>
+          <VStack spacing={4} align="stretch" flex="1">
+            <Box textAlign="center">
               <Heading size="md">Poster</Heading>
               <Text fontSize="sm" color="gray.400" mt={1}>
                 A3 landscape, print-ready
               </Text>
             </Box>
-            <Text fontSize="sm" color="green.400" textAlign="center" minH="20px">
+            <Text fontSize="sm" color="green.400" textAlign="center">
               Free
             </Text>
+            <Box flex="1" />
             <Button
               colorScheme="brand"
               onClick={onDownloadPoster}
               isLoading={isGenerating}
               loadingText="Generating..."
+              width="100%"
+              px={8}
+              py={6}
+              fontSize="sm"
             >
               Download PDF
             </Button>
@@ -109,6 +121,8 @@ export function OutputCards({
           position="relative"
           overflow="hidden"
           transition="all 0.2s"
+          display="flex"
+          flexDirection="column"
           _hover={{
             borderColor: 'brand.400',
             transform: 'translateY(-2px)',
@@ -128,21 +142,25 @@ export function OutputCards({
           >
             COMING SOON
           </Box>
-          <VStack spacing={4} align="stretch">
-            <Box textAlign="center" minH="80px">
-              <Text fontSize="2xl" mb={2} aria-hidden="true" role="img">🎁</Text>
+          <VStack spacing={4} align="stretch" flex="1">
+            <Box textAlign="center">
               <Heading size="md">Premium</Heading>
               <Text fontSize="sm" color="gray.400" mt={1}>
                 Extra themes, no watermark
               </Text>
             </Box>
-            <Text fontSize="sm" color="brand.400" textAlign="center" minH="20px">
+            <Text fontSize="sm" color="brand.400" textAlign="center">
               Unlock with email
             </Text>
+            <Box flex="1" />
             <Button
               variant="outline"
               colorScheme="brand"
               onClick={onOpen}
+              width="100%"
+              px={8}
+              py={6}
+              fontSize="sm"
             >
               Get Notified
             </Button>

@@ -706,7 +706,7 @@ function App() {
               Your Places
             </Heading>
           </DrawerHeader>
-          <DrawerBody py={6}>
+          <DrawerBody py={6} display="flex" flexDirection="column">
             <PlaceInput
               onSubmit={handleInputSubmit}
               isLoading={isGeocoding}
