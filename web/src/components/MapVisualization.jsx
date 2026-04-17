@@ -21,7 +21,7 @@ export function MapVisualization({
   const themeConfig = useMemo(() => getTheme(theme), [theme])
 
   const validPlaces = useMemo(() =>
-    places.filter(p => p.coordinates),
+    places.filter(p => p && p.coordinates),
     [places]
   )
 

@@ -149,7 +149,7 @@ function App() {
     try {
       const geocoded = await geocodePlaces(parsed, (progressPlaces, percent, current, total) => {
         // Update map with places as they're geocoded
-        const validPlaces = progressPlaces.filter(p => p.coordinates)
+        const validPlaces = progressPlaces.filter(p => p && p.coordinates)
         setPlaces(validPlaces)
         setGeocodingProgress({ current, total, percent: Math.round(percent * 100), places: progressPlaces })
       })
@@ -163,7 +163,7 @@ function App() {
 
       toast({
         title: 'Journey mapped!',
-        description: `Found ${geocoded.filter(p => p.coordinates).length} of ${geocoded.length} places.`,
+        description: `Found ${geocoded.filter(p => p && p.coordinates).length} of ${geocoded.length} places.`,
         status: 'success',
         duration: 3000,
       })
@@ -298,7 +298,7 @@ function App() {
           try {
             const parsed = parsePlaceInput(reconstructedText)
             const geocoded = await geocodePlaces(parsed, (progressPlaces, percent, current, total) => {
-              const validPlaces = progressPlaces.filter(p => p.coordinates)
+              const validPlaces = progressPlaces.filter(p => p && p.coordinates)
               setPlaces(validPlaces)
               setGeocodingProgress({ current, total, percent: Math.round(percent * 100), places: progressPlaces })
             })
@@ -311,7 +311,7 @@ function App() {
 
             toast({
               title: 'Journey imported!',
-              description: `Mapped ${geocoded.filter(p => p.coordinates).length} of ${geocoded.length} places.`,
+              description: `Mapped ${geocoded.filter(p => p && p.coordinates).length} of ${geocoded.length} places.`,
               status: 'success',
               duration: 3000,
             })
