@@ -10,6 +10,20 @@ Visualize your life journey as stunning great circle arcs across the globe.
 - Download as PDF fact sheet or poster
 - No account required - instant visualization
 
+## Geocoding
+
+MyGreatCircle uses a three-tier caching strategy for place geocoding:
+
+1. **Browser localStorage** - Instant lookup for places you've previously entered
+2. **Server SQLite cache** - Shared cache with fuzzy matching (handles typos via Levenshtein distance)
+3. **Nominatim API** - Direct client-side queries for new places (rate-limited to respect Nominatim's usage policy)
+
+When you geocode a new place, the result is cached locally in your browser and submitted to the shared server cache so other users benefit from your lookups.
+
+## Attribution
+
+Geocoding powered by [Nominatim](https://nominatim.org) · Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
+
 ## Quick Start
 
 ```bash
