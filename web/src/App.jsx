@@ -750,12 +750,12 @@ function App() {
       <Modal
         isOpen={isOutputOpen}
         onClose={onOutputClose}
-        size="xl"
+        size="6xl"
         isCentered
         returnFocusOnClose={true}
       >
         <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(8px)" />
-        <ModalContent bg="gray.900" borderRadius="xl" mx={4}>
+        <ModalContent bg="gray.900" borderRadius="xl" mx={4} maxW="1200px">
           <ModalHeader pt={6} pb={4} borderBottomWidth="1px" borderColor="gray.700">
             <Heading size="md" bgGradient="linear(to-r, teal.300, cyan.400)" bgClip="text">
               Download Your Journey
