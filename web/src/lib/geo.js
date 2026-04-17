@@ -67,7 +67,7 @@ export function extractCountry(geocodedName) {
  * @returns {Object} Journey statistics
  */
 export function computeJourneyStats(places) {
-  const validPlaces = places.filter(p => p.coordinates)
+  const validPlaces = places.filter(p => p && p.coordinates)
 
   if (validPlaces.length === 0) {
     return {

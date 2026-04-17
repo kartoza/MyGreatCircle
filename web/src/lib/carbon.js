@@ -56,7 +56,7 @@ export function treesToOffset(co2Kg) {
  * @returns {Object} Journey emissions report with legs, total CO2, and tree count
  */
 export function calculateJourneyEmissions(places) {
-  const validPlaces = places.filter(p => p.coordinates)
+  const validPlaces = places.filter(p => p && p.coordinates)
 
   if (validPlaces.length < 2) {
     return { totalCO2Kg: 0, treeCount: 0, legs: [] }
