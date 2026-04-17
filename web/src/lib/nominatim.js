@@ -37,11 +37,12 @@ export function createRateLimiter(minInterval) {
 const rateLimiter = createRateLimiter(1100)
 
 /**
- * Geocode a place using Nominatim API (rate-limited)
+ * Geocode a place using Nominatim API (rate-limited with retry)
  * @param {string} query - Place name to geocode
+ * @param {number} retries - Number of retries remaining
  * @returns {Promise<Array>} Array of results from Nominatim
  */
-export async function geocodeWithNominatim(query) {
+export async function geocodeWithNominatim(query, retries = 3) {
   return rateLimiter(async () => {
     const params = new URLSearchParams({
       q: query,
@@ -56,7 +57,14 @@ export async function geocodeWithNominatim(query) {
     })
 
     if (response.status === 429) {
-      throw new Error('Rate limited by Nominatim')
+      if (retries > 0) {
+        // Wait longer and retry (exponential backoff)
+        const delay = (4 - retries) * 2000
+        console.log(`Rate limited, waiting ${delay}ms before retry...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return geocodeWithNominatim(query, retries - 1)
+      }
+      throw new Error('Rate limited by Nominatim - please wait a minute and try again')
     }
 
     if (!response.ok) {
