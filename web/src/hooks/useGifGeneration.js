@@ -69,7 +69,7 @@ export function useGifGeneration() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
 
-  const generateGif = useCallback(async (places, theme, options = {}) => {
+  const generateGif = useCallback(async (places, theme, ecoMode = false, ecoStats = null, options = {}) => {
     const {
       width = 800,
       height = 450,
@@ -224,6 +224,39 @@ export function useGifGeneration() {
         }
       }
 
+      // Helper to draw eco stats overlay
+      const drawEcoStats = () => {
+        if (!ecoMode || !ecoStats || ecoStats.treeCount <= 0) return
+
+        const padding = 15
+        const boxWidth = 180
+        const boxHeight = 50
+        const boxX = width - boxWidth - padding
+        const boxY = height - boxHeight - padding
+
+        // Semi-transparent background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+        ctx.beginPath()
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 8)
+        ctx.fill()
+
+        // Tree emoji representation
+        const treeCount = Math.min(10, Math.ceil(ecoStats.treeCount / 5))
+        ctx.font = '14px sans-serif'
+        ctx.fillStyle = '#4ade80'
+        ctx.textAlign = 'center'
+        const trees = Array(treeCount).fill('🌳').join('')
+        ctx.fillText(trees, boxX + boxWidth / 2, boxY + 20)
+
+        // CO2 text
+        const co2Text = ecoStats.totalCO2Kg >= 1000
+          ? `${(ecoStats.totalCO2Kg / 1000).toFixed(1)}t CO2`
+          : `${ecoStats.totalCO2Kg}kg CO2`
+        ctx.font = '12px sans-serif'
+        ctx.fillStyle = '#a3a3a3'
+        ctx.fillText(`${ecoStats.treeCount} trees to offset ${co2Text}`, boxX + boxWidth / 2, boxY + 38)
+      }
+
       // Generate frames
       const framesCount = Math.ceil(totalSegments / arcSegmentsPerFrame) + validPlaces.length + 10
 
@@ -260,11 +293,12 @@ export function useGifGeneration() {
         setProgress(Math.min(90, Math.round((currentSegment / totalSegments) * 80)))
       }
 
-      // Final frames showing complete journey
+      // Final frames showing complete journey with eco stats
       for (let i = 0; i < 10; i++) {
         drawBaseMap()
         drawArcs(totalSegments)
         drawPoints(validPlaces.length - 1)
+        drawEcoStats()
         gif.addFrame(ctx, { copy: true, delay: frameDelay * 2 })
       }
 

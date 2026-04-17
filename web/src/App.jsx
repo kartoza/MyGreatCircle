@@ -191,7 +191,7 @@ function App() {
   }
 
   const handleDownloadGif = async () => {
-    await generateGif(displayPlaces, theme, {
+    await generateGif(displayPlaces, theme, ecoMode, ecoStats, {
       width: 800,
       height: 450,
       frameDelay: 80,
