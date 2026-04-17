@@ -94,11 +94,42 @@ As a user, I want to see the environmental impact of my journey so that I can un
 ## Technical Requirements
 
 ### TR-001: Geocoding
-- Use Nominatim (OpenStreetMap) for geocoding
-- Implement in-memory LRU cache with 7-day TTL (10,000 entries max)
-- Manage rate limiting to stay within Nominatim's 1 request/second limit
-- Cache results to reduce API calls and latency
-- Handle timeout and network errors gracefully
+
+#### Three-Tier Caching Architecture
+The geocoding system uses a 3-tier caching strategy to minimize Nominatim API calls and share results across users:
+
+1. **Tier 1: Browser localStorage** (exact match)
+   - First lookup, instant response
+   - Persists across browser sessions
+   - Versioned to allow cache invalidation
+
+2. **Tier 2: Server SQLite cache** (fuzzy match)
+   - Batch lookup via `POST /api/places/lookup`
+   - Uses Levenshtein distance (max 3) for typo tolerance
+   - Prefix-based candidate filtering for performance
+   - Shared across all users
+
+3. **Tier 3: Nominatim API** (client-side, rate-limited)
+   - Direct browser-to-Nominatim requests
+   - Rate limited to 1 request per 1.1 seconds
+   - Results submitted back to server for shared caching
+
+#### Data Flow
+1. User enters places
+2. Check localStorage for exact matches
+3. Batch lookup unresolved places from server (`POST /api/places/lookup`)
+4. Query Nominatim directly for remaining places (sequential, rate-limited)
+5. Cache results in localStorage
+6. Submit newly resolved places to server (`POST /api/places/submit`)
+
+#### Attribution Requirements
+Nominatim and OpenStreetMap attribution must be displayed in:
+- Web UI footer (both compact and full versions)
+- PDF fact sheet footer
+- PDF poster footer
+- README documentation
+
+Attribution text: "Geocoding by Nominatim · Map data © OpenStreetMap contributors"
 
 ### TR-002: Client-Side Processing
 - Visualization rendered with D3.js
@@ -200,27 +231,59 @@ Response:
 }
 ```
 
-### Geocoding Endpoint
+### Places Lookup Endpoint
+
+Batch fuzzy lookup of places from the server-side cache.
 
 ```
-POST /api/geocode
+POST /api/places/lookup
 
 Request:
 {
-  "query": "Cape Town, South Africa"
+  "queries": ["Cape Town", "Johannesburg", "Durban"]
 }
 
 Response:
 {
-  "results": [
-    {
-      "name": "Cape Town, Western Cape, South Africa",
+  "resolved": {
+    "cape town": {
+      "displayName": "Cape Town, Western Cape, South Africa",
       "lat": -33.9249,
-      "lng": 18.4241,
-      "confidence": "high"
+      "lng": 18.4241
+    },
+    "johannesburg": {
+      "displayName": "Johannesburg, Gauteng, South Africa",
+      "lat": -26.2041,
+      "lng": 28.0473
     }
-  ],
-  "cached": true
+  },
+  "unresolved": ["durban"]
+}
+```
+
+### Places Submit Endpoint
+
+Submit newly geocoded places to the shared server cache.
+
+```
+POST /api/places/submit
+
+Request:
+{
+  "places": [
+    {
+      "query": "Durban",
+      "displayName": "Durban, KwaZulu-Natal, South Africa",
+      "lat": -29.8587,
+      "lng": 31.0218,
+      "importance": 0.75
+    }
+  ]
+}
+
+Response:
+{
+  "saved": 1
 }
 ```
 
@@ -289,9 +352,12 @@ MyGreatCircle/
 │   ├── api/
 │   │   ├── server.go                 # HTTP server setup, routing
 │   │   ├── handlers.go               # Health check endpoint
-│   │   └── geocode.go                # Nominatim proxy with caching
-│   └── cache/
-│       └── lru.go                    # LRU cache with TTL support
+│   │   ├── places.go                 # Places lookup/submit endpoints
+│   │   └── places_test.go            # Places API tests
+│   └── db/
+│       ├── repository.go             # PlaceRepository interface
+│       ├── sqlite.go                 # SQLite implementation with fuzzy matching
+│       └── db_test.go                # Database tests
 ├── web/
 │   ├── src/
 │   │   ├── components/
@@ -313,6 +379,10 @@ MyGreatCircle/
 │   │   │   ├── geo.js                # Great circle math, distance, insights
 │   │   │   ├── carbon.js             # CO2 emissions calculations
 │   │   │   ├── carbon.test.js        # Carbon calculation tests
+│   │   │   ├── nominatim.js          # Client-side Nominatim with rate limiting
+│   │   │   ├── nominatim.test.js     # Nominatim module tests
+│   │   │   ├── wordcloud.js          # Word cloud positioning algorithm
+│   │   │   ├── wordcloud.test.js     # Word cloud tests
 │   │   │   └── topo/world.json       # World map TopoJSON
 │   │   ├── App.jsx                   # Main app component, state management
 │   │   └── main.jsx                  # React entry point
@@ -380,10 +450,10 @@ MyGreatCircle/
 │  MyGreatCircle                         │
 │  "Your Life in Places"                 │
 ├────────────────────────────────────────┤
-│                                        │
-│         [Map Visualization]            │
+│ Paris                                  │
+│         [Map Visualization]      Tokyo │
 │         (40% of page height)           │
-│                                        │
+│ London                          Berlin │
 ├────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐   │
 │  │ X Places     │  │ Y Countries  │   │
@@ -392,14 +462,13 @@ MyGreatCircle/
 │  │ N km total   │  │ M km longest │   │
 │  └──────────────┘  └──────────────┘   │
 ├────────────────────────────────────────┤
-│  Your Places:                          │
-│  • Place 1                             │
-│  • Place 2 (years)                     │
-│  • ...                                 │
-├────────────────────────────────────────┤
+│  Made with ♥ by Kartoza               │
+│  Geocoding by Nominatim · © OSM       │
 │  mygreatcircle.com                     │
 └────────────────────────────────────────┘
 ```
+
+Place names appear as a word cloud in the margins around the map (gray text, equal size, random placement) rather than a bullet list.
 
 ### Poster (A3 Landscape)
 
