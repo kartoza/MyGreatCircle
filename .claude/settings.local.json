@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(git init:*)",
+      "Bash(go mod init:*)",
+      "Bash(git add:*)",
+      "Bash(git config:*)",
+      "Bash(git commit:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go build:*)",
+      "Bash(tree:*)",
+      "Bash(git show:*)",
+      "Bash(go test:*)",
+      "Bash(npm install:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)",
+      "Bash(python3:*)",
+      "Bash(make build:*)",
+      "Bash(./mygreatcircle:*)",
+      "Bash(curl:*)",
+      "Bash(git reset:*)",
+      "Bash(pgrep:*)",
+      "Bash(ss:*)",
+      "Bash(tailor:*)"
+    ]
+  }
+}

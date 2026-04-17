@@ -47,9 +47,8 @@
             go-tools
             golangci-lint
 
-            # Node
+            # Node (npm is bundled with nodejs)
             nodejs_22
-            nodePackages.npm
 
             # Documentation
             python312
