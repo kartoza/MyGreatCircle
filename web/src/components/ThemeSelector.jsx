@@ -18,7 +18,7 @@ export function ThemeSelector({ currentTheme, onThemeChange }) {
 
         // Get arc color for the inner ring
         const arcColor = theme.arc.stroke.startsWith('url')
-          ? '#ff6b6b' // Neon uses gradient, show first color
+          ? (theme.arcGradient?.colors?.[0] || '#ffffff') // Use first gradient color
           : theme.arc.stroke
 
         return (

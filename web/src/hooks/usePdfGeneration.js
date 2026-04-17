@@ -177,10 +177,10 @@ function interpolateGradient(colors, t) {
  * @param {Array} places - Array of places with coordinates
  * @param {Object} mapBounds - { x, y, width, height }
  * @param {Function} project - Projection function
- * @param {Object} options - { strokeColor, strokeWidth, gradientColors }
+ * @param {Object} options - { strokeColor, strokeWidth, gradientColors, dashArray }
  */
 function drawJourneyArcs(pdf, places, mapBounds, project, options = {}) {
-  const { strokeColor, strokeWidth = 0.8, gradientColors } = options
+  const { strokeColor, strokeWidth = 0.8, gradientColors, dashArray } = options
 
   const validPlaces = places.filter(p => p && p.coordinates)
   if (validPlaces.length < 2) return
@@ -202,6 +202,12 @@ function drawJourneyArcs(pdf, places, mapBounds, project, options = {}) {
   }
 
   pdf.setLineWidth(strokeWidth)
+
+  // Set dash pattern if specified (e.g., '6,4' -> [6, 4])
+  if (dashArray) {
+    const dashPattern = dashArray.split(',').map(n => parseFloat(n.trim()) * 0.26) // Convert px to mm
+    pdf.setLineDashPattern(dashPattern, 0)
+  }
 
   let segmentIndex = 0
 
@@ -250,18 +256,32 @@ function drawJourneyArcs(pdf, places, mapBounds, project, options = {}) {
  * @param {Object} pdf - jsPDF instance
  * @param {Array} places - Array of places with coordinates
  * @param {Function} project - Projection function
- * @param {Object} options - { fillColor, radius }
+ * @param {Object} options - { fillColor, strokeColor, strokeWidth, radius }
  */
 function drawPlaceMarkers(pdf, places, project, options = {}) {
-  const { fillColor = [250, 204, 21], radius = 1.5 } = options
+  const { fillColor, strokeColor, strokeWidth = 0.4, radius = 1.5 } = options
 
   const validPlaces = places.filter(p => p && p.coordinates)
 
-  pdf.setFillColor(...fillColor)
-
   for (const place of validPlaces) {
     const [x, y] = project(place.coordinates)
-    pdf.circle(x, y, radius, 'F')
+
+    if (strokeColor && !fillColor) {
+      // Stroke only (e.g., blueprint theme)
+      pdf.setDrawColor(...strokeColor)
+      pdf.setLineWidth(strokeWidth)
+      pdf.circle(x, y, radius, 'S')
+    } else if (fillColor && strokeColor) {
+      // Both fill and stroke
+      pdf.setFillColor(...fillColor)
+      pdf.setDrawColor(...strokeColor)
+      pdf.setLineWidth(strokeWidth)
+      pdf.circle(x, y, radius, 'FD')
+    } else if (fillColor) {
+      // Fill only
+      pdf.setFillColor(...fillColor)
+      pdf.circle(x, y, radius, 'F')
+    }
   }
 }
 
@@ -339,11 +359,16 @@ export function usePdfGeneration() {
         strokeColor: themeConfig.arc.stroke,
         strokeWidth: themeConfig.arc.strokeWidth * 0.26, // Convert px to mm
         gradientColors: themeConfig.arcGradient?.colors,
+        dashArray: themeConfig.arc.dashArray,
       })
 
       // Draw place markers directly on PDF
+      const pointFill = themeConfig.point.fill === 'transparent' ? null : hexToRgb(themeConfig.point.fill)
+      const pointStroke = themeConfig.point.stroke ? hexToRgb(themeConfig.point.stroke) : null
       drawPlaceMarkers(pdf, places, project, {
-        fillColor: hexToRgb(themeConfig.point.fill),
+        fillColor: pointFill,
+        strokeColor: pointStroke,
+        strokeWidth: (themeConfig.point.strokeWidth || 1) * 0.26,
         radius: themeConfig.point.radius * 0.26, // Convert px to mm
       })
 
@@ -500,11 +525,16 @@ export function usePdfGeneration() {
         strokeColor: themeConfig.arc.stroke,
         strokeWidth: themeConfig.arc.strokeWidth * 0.26, // Convert px to mm
         gradientColors: themeConfig.arcGradient?.colors,
+        dashArray: themeConfig.arc.dashArray,
       })
 
       // Draw place markers directly on PDF
+      const pointFillPoster = themeConfig.point.fill === 'transparent' ? null : hexToRgb(themeConfig.point.fill)
+      const pointStrokePoster = themeConfig.point.stroke ? hexToRgb(themeConfig.point.stroke) : null
       drawPlaceMarkers(pdf, places, project, {
-        fillColor: hexToRgb(themeConfig.point.fill),
+        fillColor: pointFillPoster,
+        strokeColor: pointStrokePoster,
+        strokeWidth: (themeConfig.point.strokeWidth || 1) * 0.26,
         radius: themeConfig.point.radius * 0.26, // Convert px to mm
       })
 

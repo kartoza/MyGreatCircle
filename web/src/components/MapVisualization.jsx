@@ -57,10 +57,12 @@ export function MapVisualization({
       })
     }
 
-    // Neon gradient for arcs
+    // Arc gradient for themes with gradient strokes
     if (themeConfig.arcGradient) {
+      // Create gradient with theme-specific ID
+      const gradientId = `${themeConfig.id}Gradient`
       const arcGradient = defs.append('linearGradient')
-        .attr('id', 'neonGradient')
+        .attr('id', gradientId)
         .attr('gradientUnits', 'userSpaceOnUse')
 
       themeConfig.arcGradient.colors.forEach((color, i) => {
@@ -141,12 +143,18 @@ export function MapVisualization({
             .remove()
 
           // The actual dot
-          pointsGroup.append('circle')
+          const dot = pointsGroup.append('circle')
             .attr('cx', x)
             .attr('cy', y)
             .attr('r', themeConfig.point.radius)
             .attr('fill', themeConfig.point.fill)
             .attr('filter', themeConfig.point.glow ? 'url(#glow)' : null)
+
+          // Support stroke for themes like blueprint
+          if (themeConfig.point.stroke) {
+            dot.attr('stroke', themeConfig.point.stroke)
+               .attr('stroke-width', themeConfig.point.strokeWidth || 1)
+          }
         })
         return
       }
@@ -186,13 +194,20 @@ export function MapVisualization({
       validPlaces.forEach((place, i) => {
         const [x, y] = projection(place.coordinates)
 
-        pointsGroup.append('circle')
+        const dot = pointsGroup.append('circle')
           .attr('cx', x)
           .attr('cy', y)
           .attr('r', 0)
           .attr('fill', themeConfig.point.fill)
           .attr('filter', themeConfig.point.glow ? 'url(#glow)' : null)
-          .transition()
+
+        // Support stroke for themes like blueprint
+        if (themeConfig.point.stroke) {
+          dot.attr('stroke', themeConfig.point.stroke)
+             .attr('stroke-width', themeConfig.point.strokeWidth || 1)
+        }
+
+        dot.transition()
           .duration(500)
           .delay(i * 200)
           .attr('r', themeConfig.point.radius)
