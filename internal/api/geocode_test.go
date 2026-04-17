@@ -6,10 +6,18 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kartoza/MyGreatCircle/internal/db"
 )
 
 func TestGeocodeHandler_ValidRequest(t *testing.T) {
-	server := NewServer(8080, ".")
+	repo, err := db.NewSQLiteRepository(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create repo: %v", err)
+	}
+	defer repo.Close()
+
+	server := NewServer(8080, ".", repo)
 
 	body := GeocodeRequest{Query: "Cape Town, South Africa"}
 	jsonBody, _ := json.Marshal(body)
@@ -35,7 +43,13 @@ func TestGeocodeHandler_ValidRequest(t *testing.T) {
 }
 
 func TestGeocodeHandler_EmptyQuery(t *testing.T) {
-	server := NewServer(8080, ".")
+	repo, err := db.NewSQLiteRepository(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create repo: %v", err)
+	}
+	defer repo.Close()
+
+	server := NewServer(8080, ".", repo)
 
 	body := GeocodeRequest{Query: ""}
 	jsonBody, _ := json.Marshal(body)
