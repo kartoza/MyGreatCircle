@@ -1,6 +1,25 @@
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const USER_AGENT = 'MyGreatCircle/1.0 (https://github.com/kartoza/MyGreatCircle)'
 
+// Error types for geocoding failures
+export const GeocodingErrorType = {
+  NO_MATCH: 'no_match',
+  RATE_LIMITED: 'rate_limited',
+  TIMEOUT: 'timeout',
+  NETWORK_ERROR: 'network_error',
+}
+
+/**
+ * Custom error class for geocoding failures
+ */
+export class GeocodingError extends Error {
+  constructor(type, message) {
+    super(message)
+    this.name = 'GeocodingError'
+    this.type = type
+  }
+}
+
 /**
  * Normalize a query string for cache keys
  * @param {string} query - The query to normalize
@@ -41,6 +60,7 @@ const rateLimiter = createRateLimiter(1100)
  * @param {string} query - Place name to geocode
  * @param {number} retries - Number of retries remaining
  * @returns {Promise<Array>} Array of results from Nominatim
+ * @throws {GeocodingError} On rate limit, timeout, or network errors
  */
 export async function geocodeWithNominatim(query, retries = 3) {
   return rateLimiter(async () => {
@@ -50,11 +70,26 @@ export async function geocodeWithNominatim(query, retries = 3) {
       limit: '5'
     })
 
-    const response = await fetch(`${NOMINATIM_URL}?${params}`, {
-      headers: {
-        'User-Agent': USER_AGENT
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+    let response
+    try {
+      response = await fetch(`${NOMINATIM_URL}?${params}`, {
+        headers: {
+          'User-Agent': USER_AGENT
+        },
+        signal: controller.signal
+      })
+    } catch (e) {
+      clearTimeout(timeoutId)
+      if (e.name === 'AbortError') {
+        throw new GeocodingError(GeocodingErrorType.TIMEOUT, 'Request timed out')
       }
-    })
+      throw new GeocodingError(GeocodingErrorType.NETWORK_ERROR, `Network error: ${e.message}`)
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     if (response.status === 429) {
       if (retries > 0) {
@@ -64,11 +99,11 @@ export async function geocodeWithNominatim(query, retries = 3) {
         await new Promise(resolve => setTimeout(resolve, delay))
         return geocodeWithNominatim(query, retries - 1)
       }
-      throw new Error('Rate limited by Nominatim - please wait a minute and try again')
+      throw new GeocodingError(GeocodingErrorType.RATE_LIMITED, 'Rate limited - please wait and try again')
     }
 
     if (!response.ok) {
-      throw new Error(`Nominatim error: ${response.status}`)
+      throw new GeocodingError(GeocodingErrorType.NETWORK_ERROR, `Nominatim error: ${response.status}`)
     }
 
     const results = await response.json()

@@ -76,8 +76,9 @@ function App() {
   const { isOpen: isPlacesOpen, onOpen: onPlacesOpen, onClose: onPlacesClose } = useDisclosure()
 
   const toast = useToast()
-  const { geocodePlaces, isLoading: isGeocoding } = useGeocoding()
+  const { geocodePlaces, retryPlace, isLoading: isGeocoding } = useGeocoding()
   const { generateFactSheet, generatePoster, isGenerating } = usePdfGeneration()
+  const [retryingPlaceId, setRetryingPlaceId] = useState(null)
 
   const displayPlaces = showDemo && places.length === 0 ? DEMO_PLACES : places
   const stats = useMemo(() => computeJourneyStats(displayPlaces), [displayPlaces])
@@ -185,6 +186,41 @@ function App() {
 
   const handleDownloadPoster = async () => {
     await generatePoster(svgRef.current, displayPlaces, theme, ecoMode, ecoStats)
+  }
+
+  const handleRetryPlace = async (place) => {
+    setRetryingPlaceId(place.id)
+    try {
+      const updatedPlace = await retryPlace(place)
+      // Update the place in the places array
+      setPlaces(prevPlaces =>
+        prevPlaces.map(p => p.id === place.id ? updatedPlace : p)
+      )
+      if (updatedPlace.coordinates) {
+        toast({
+          title: 'Location found!',
+          description: `Found ${updatedPlace.geocodedName}`,
+          status: 'success',
+          duration: 3000,
+        })
+      } else {
+        toast({
+          title: 'Still not found',
+          description: updatedPlace.errorMessage || 'Could not find location',
+          status: 'warning',
+          duration: 3000,
+        })
+      }
+    } catch (e) {
+      toast({
+        title: 'Retry failed',
+        description: e.message,
+        status: 'error',
+        duration: 3000,
+      })
+    } finally {
+      setRetryingPlaceId(null)
+    }
   }
 
   const handleExportJSON = () => {
@@ -690,7 +726,11 @@ function App() {
             Place List
           </DrawerHeader>
           <DrawerBody py={4}>
-            <PlaceList places={places} />
+            <PlaceList
+              places={places}
+              onRetryPlace={handleRetryPlace}
+              retryingPlaceId={retryingPlaceId}
+            />
           </DrawerBody>
         </DrawerContent>
       </Drawer>

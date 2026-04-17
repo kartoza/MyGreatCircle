@@ -1,5 +1,8 @@
 import { useState, useCallback } from 'react'
-import { normalizeQuery, geocodeWithNominatim } from '../lib/nominatim'
+import { normalizeQuery, geocodeWithNominatim, GeocodingError, GeocodingErrorType } from '../lib/nominatim'
+
+// Re-export error types for consumers
+export { GeocodingErrorType } from '../lib/nominatim'
 
 const GEOCODE_CACHE_KEY = 'mygreatcircle-geocode-cache'
 const CACHE_VERSION = 2 // Bumped to invalidate old format
@@ -250,11 +253,27 @@ export function useGeocoding() {
             geocodedName: best.name,
           }
         } else {
-          geocodedPlaces[index] = { ...place, confidence: 'failed', alternatives: [] }
+          // No results found - this is a "no match" error
+          geocodedPlaces[index] = {
+            ...place,
+            confidence: 'failed',
+            errorType: GeocodingErrorType.NO_MATCH,
+            errorMessage: 'No matching location found',
+            alternatives: []
+          }
         }
       } catch (e) {
         console.error(`Failed to geocode "${place.name}":`, e)
-        geocodedPlaces[index] = { ...place, confidence: 'failed', alternatives: [] }
+        // Determine error type
+        const errorType = e instanceof GeocodingError ? e.type : GeocodingErrorType.NETWORK_ERROR
+        const errorMessage = e.message || 'Unknown error'
+        geocodedPlaces[index] = {
+          ...place,
+          confidence: 'failed',
+          errorType,
+          errorMessage,
+          alternatives: []
+        }
       }
 
       // Report progress
@@ -266,6 +285,47 @@ export function useGeocoding() {
 
     setIsLoading(false)
     return geocodedPlaces
+  }, [geocodePlace])
+
+  /**
+   * Retry geocoding for a single failed place
+   * @param {Object} place - The place object to retry
+   * @returns {Object} Updated place with geocoding result
+   */
+  const retryPlace = useCallback(async (place) => {
+    try {
+      const result = await geocodePlace(place.name)
+      if (result.results && result.results.length > 0) {
+        const best = result.results[0]
+        return {
+          ...place,
+          coordinates: [best.lng, best.lat],
+          confidence: best.confidence || 'high',
+          alternatives: result.results.slice(1),
+          geocodedName: best.name,
+          errorType: undefined,
+          errorMessage: undefined,
+        }
+      } else {
+        return {
+          ...place,
+          confidence: 'failed',
+          errorType: GeocodingErrorType.NO_MATCH,
+          errorMessage: 'No matching location found',
+          alternatives: []
+        }
+      }
+    } catch (e) {
+      console.error(`Retry failed for "${place.name}":`, e)
+      const errorType = e instanceof GeocodingError ? e.type : GeocodingErrorType.NETWORK_ERROR
+      return {
+        ...place,
+        confidence: 'failed',
+        errorType,
+        errorMessage: e.message || 'Unknown error',
+        alternatives: []
+      }
+    }
   }, [geocodePlace])
 
   /**
@@ -290,6 +350,7 @@ export function useGeocoding() {
   return {
     geocodePlace,
     geocodePlaces,
+    retryPlace,
     isLoading,
     error,
     getCacheStats,
