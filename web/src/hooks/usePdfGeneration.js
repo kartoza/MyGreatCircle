@@ -409,17 +409,17 @@ export function usePdfGeneration() {
         pdf.text(stat.sub, x, y + 14)
       })
 
-      // Eco stats section (if enabled)
+      // Eco stats section (left side, if enabled)
+      const sideBlockY = statsY + 65
       let contentEndY = statsY + 60
-      if (ecoMode && ecoStats && ecoStats.treeCount > 0) {
-        const ecoY = statsY + 65
 
+      if (ecoMode && ecoStats && ecoStats.treeCount > 0) {
         // Simple tree representation using text
         const treeCount = Math.min(10, Math.ceil(ecoStats.treeCount / 5))
         const treeLine = Array(treeCount).fill('*').join(' ')
         pdf.setFontSize(12)
         pdf.setTextColor(34, 139, 34) // Forest green
-        pdf.text(treeLine, margin, ecoY)
+        pdf.text(treeLine, margin, sideBlockY)
 
         // Eco text
         pdf.setFontSize(11)
@@ -427,21 +427,29 @@ export function usePdfGeneration() {
         pdf.text(
           `${formatCO2ForPdf(ecoStats.totalCO2Kg)} CO2 · ${ecoStats.treeCount} trees to offset`,
           margin,
-          ecoY + 8
+          sideBlockY + 8
         )
 
         pdf.setFontSize(9)
-        pdf.text('onetreeplanted.org', margin, ecoY + 14)
+        pdf.text('onetreeplanted.org', margin, sideBlockY + 14)
 
-        contentEndY = ecoY + 20
+        contentEndY = sideBlockY + 20
       }
+
+      // Kartoza branding (right side, opposite eco stats)
+      const brandingX = margin + statWidth
+      renderKartozaBranding(pdf, brandingX, sideBlockY)
+
+      pdf.setTextColor(...mutedColor)
+      pdf.setFontSize(8)
+      pdf.text('mygreatcircle.kartoza.com', brandingX, sideBlockY + 6)
 
       // Compact word cloud of place names (below stats)
       const wordCloudBounds = {
         x: margin,
         y: contentEndY + 5,
         width: pageWidth - (margin * 2),
-        height: pageHeight - contentEndY - 35, // Leave room for footer
+        height: pageHeight - contentEndY - 20, // Leave room for footer
       }
 
       renderCompactWordCloud(pdf, places, wordCloudBounds, {
@@ -450,16 +458,9 @@ export function usePdfGeneration() {
         maxPlaces: 60,
       })
 
-      // Footer with Kartoza branding
-      const footerY = pageHeight - 12
-      renderKartozaBranding(pdf, margin, footerY)
-
-      pdf.setTextColor(...mutedColor)
-      pdf.setFontSize(8)
-      pdf.text('mygreatcircle.kartoza.com', margin, footerY + 5)
-
-      // Attribution (centered under word cloud)
-      renderAttribution(pdf, wordCloudBounds, footerY + 10, mutedColor)
+      // Attribution at footer (centered)
+      const footerY = pageHeight - 8
+      renderAttribution(pdf, wordCloudBounds, footerY, mutedColor)
 
       pdf.save('my-journey-factsheet.pdf')
     } finally {
