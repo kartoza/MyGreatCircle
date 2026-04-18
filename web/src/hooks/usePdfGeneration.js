@@ -555,17 +555,33 @@ export function usePdfGeneration() {
       const mapBottom = mapTop + mapHeight
       const margin = 10
 
-      // Calculate branding block position (right-aligned with consistent margins)
-      // Branding block width is approximately 85mm
-      const brandingBlockWidth = 85
-      const brandX = pageWidth - margin - brandingBlockWidth + 10 // Offset for text start
+      // Calculate actual branding block width first
+      pdf.setFontSize(9)
+      const madeWithWidth = pdf.getTextWidth('Made with')
+      const spacing = 2.5
+      const heartWidth = 3 * 1.3
+      const byKartozaWidth = pdf.getTextWidth('by Kartoza')
+      const brandingTextWidth = madeWithWidth + spacing + heartWidth + spacing + byKartozaWidth
+
+      pdf.setFontSize(8)
+      const urlText = 'mygreatcircle.kartoza.com'
+      const urlWidth = pdf.getTextWidth(urlText)
+
+      // Use the wider of branding text or URL as the block width
+      const brandingBlockWidth = Math.max(brandingTextWidth, urlWidth)
+
+      // Position branding block: right edge at pageWidth - margin
+      const brandingRightEdge = pageWidth - margin
+      const brandingCenterX = brandingRightEdge - (brandingBlockWidth / 2)
+      const brandX = brandingCenterX - (brandingTextWidth / 2)
       const brandY = mapBottom + 8
 
-      // Word cloud fills space between left margin and branding block (with same gutter as margins)
+      // Word cloud fills space with equal gutters (margin on left, margin gap before branding)
+      const wordCloudRightEdge = brandingCenterX - (brandingBlockWidth / 2) - margin
       const wordCloudBounds = {
         x: margin,
         y: mapBottom + 3,
-        width: brandX - margin - margin, // Leave margin-sized gutter before branding
+        width: wordCloudRightEdge - margin,
         height: 32, // Enough for 4 lines
       }
 
@@ -575,23 +591,12 @@ export function usePdfGeneration() {
         maxPlaces: 80, // Allow more places before eliding
       })
 
-      // Kartoza branding on bottom right
+      // Kartoza branding on bottom right (centered in its block)
       renderKartozaBranding(pdf, brandX, brandY)
-
-      // Calculate branding center for centering elements below
-      pdf.setFontSize(9)
-      const madeWithWidth = pdf.getTextWidth('Made with')
-      const spacing = 2.5
-      const heartWidth = 3 * 1.3
-      const byKartozaWidth = pdf.getTextWidth('by Kartoza')
-      const totalBrandingWidth = madeWithWidth + spacing + heartWidth + spacing + byKartozaWidth
-      const brandingCenterX = brandX + totalBrandingWidth / 2
 
       // URL centered under branding
       pdf.setTextColor(...mutedColor)
       pdf.setFontSize(8)
-      const urlText = 'mygreatcircle.kartoza.com'
-      const urlWidth = pdf.getTextWidth(urlText)
       pdf.text(urlText, brandingCenterX - (urlWidth / 2), brandY + 6)
 
       // Eco stats centered under branding (if enabled)
