@@ -93,7 +93,7 @@ function renderKartozaBranding(pdf, x, y, options = {}) {
 function renderAttribution(pdf, bounds, y, mutedColor) {
   pdf.setFontSize(7)
   pdf.setTextColor(...mutedColor)
-  const text = 'Equal Earth projection · Geocoding by Nominatim · Map data © Natural Earth'
+  const text = 'Equal Earth projection · Geocoding by GeoNames.org & Nominatim · Map data © Natural Earth'
   const textWidth = pdf.getTextWidth(text)
   // Center within the provided bounds
   pdf.text(text, bounds.x + (bounds.width - textWidth) / 2, y)

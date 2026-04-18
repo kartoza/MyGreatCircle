@@ -20,6 +20,16 @@ export function Footer({ compact = false }) {
         <HStack spacing={1}>
           <Text color="gray.500" fontSize="2xs">Geocoding by</Text>
           <Link
+            href="https://geonames.org"
+            isExternal
+            color="gray.500"
+            fontSize="2xs"
+            _hover={{ color: 'gray.400' }}
+          >
+            GeoNames.org
+          </Link>
+          <Text color="gray.500" fontSize="2xs">&</Text>
+          <Link
             href="https://nominatim.org"
             isExternal
             color="gray.500"
@@ -27,16 +37,6 @@ export function Footer({ compact = false }) {
             _hover={{ color: 'gray.400' }}
           >
             Nominatim
-          </Link>
-          <Text color="gray.500" fontSize="2xs">·</Text>
-          <Link
-            href="https://www.openstreetmap.org/copyright"
-            isExternal
-            color="gray.500"
-            fontSize="2xs"
-            _hover={{ color: 'gray.400' }}
-          >
-            © OpenStreetMap
           </Link>
         </HStack>
       </VStack>
@@ -86,21 +86,21 @@ export function Footer({ compact = false }) {
         <HStack spacing={2} justify="center" fontSize="xs">
           <Text color="gray.500">Geocoding by</Text>
           <Link
+            href="https://geonames.org"
+            isExternal
+            color="gray.500"
+            _hover={{ color: 'gray.400' }}
+          >
+            GeoNames.org
+          </Link>
+          <Text color="gray.500">&</Text>
+          <Link
             href="https://nominatim.org"
             isExternal
             color="gray.500"
             _hover={{ color: 'gray.400' }}
           >
             Nominatim
-          </Link>
-          <Text color="gray.500">· Map data</Text>
-          <Link
-            href="https://www.openstreetmap.org/copyright"
-            isExternal
-            color="gray.500"
-            _hover={{ color: 'gray.400' }}
-          >
-            © OpenStreetMap contributors
           </Link>
         </HStack>
       </VStack>
