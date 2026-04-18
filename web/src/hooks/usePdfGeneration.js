@@ -553,10 +553,19 @@ export function usePdfGeneration() {
 
       // Compact word cloud in a rectangular block at the bottom (4 lines max)
       const mapBottom = mapTop + mapHeight
+      const margin = 10
+
+      // Calculate branding block position (right-aligned with consistent margins)
+      // Branding block width is approximately 85mm
+      const brandingBlockWidth = 85
+      const brandX = pageWidth - margin - brandingBlockWidth + 10 // Offset for text start
+      const brandY = mapBottom + 8
+
+      // Word cloud fills space between left margin and branding block (with same gutter as margins)
       const wordCloudBounds = {
-        x: 10,
+        x: margin,
         y: mapBottom + 3,
-        width: pageWidth - 120, // Leave room for branding on right
+        width: brandX - margin - margin, // Leave margin-sized gutter before branding
         height: 32, // Enough for 4 lines
       }
 
@@ -566,33 +575,33 @@ export function usePdfGeneration() {
         maxPlaces: 80, // Allow more places before eliding
       })
 
-      // Add eco stats if enabled
-      if (ecoMode && ecoStats && ecoStats.treeCount > 0) {
-        pdf.setFontSize(8)
-        pdf.setTextColor(...mutedColor)
-        const ecoText = `${ecoStats.treeCount} trees to offset ${formatCO2ForPdf(ecoStats.totalCO2Kg)} CO2`
-        pdf.text(ecoText, 10, pageHeight - 8)
-      }
-
       // Kartoza branding on bottom right
-      const brandX = pageWidth - 90
-      const brandY = mapBottom + 12
       renderKartozaBranding(pdf, brandX, brandY)
 
-      // Center URL under branding - calculate actual branding width
-      pdf.setFontSize(9) // Same as branding font size
+      // Calculate branding center for centering elements below
+      pdf.setFontSize(9)
       const madeWithWidth = pdf.getTextWidth('Made with')
       const spacing = 2.5
-      const heartWidth = 3 * 1.3 // heartSize * 1.3
+      const heartWidth = 3 * 1.3
       const byKartozaWidth = pdf.getTextWidth('by Kartoza')
       const totalBrandingWidth = madeWithWidth + spacing + heartWidth + spacing + byKartozaWidth
       const brandingCenterX = brandX + totalBrandingWidth / 2
 
+      // URL centered under branding
       pdf.setTextColor(...mutedColor)
       pdf.setFontSize(8)
       const urlText = 'mygreatcircle.kartoza.com'
       const urlWidth = pdf.getTextWidth(urlText)
-      pdf.text(urlText, brandingCenterX - (urlWidth / 2), brandY + 5)
+      pdf.text(urlText, brandingCenterX - (urlWidth / 2), brandY + 6)
+
+      // Eco stats centered under branding (if enabled)
+      if (ecoMode && ecoStats && ecoStats.treeCount > 0) {
+        pdf.setFontSize(8)
+        pdf.setTextColor(...mutedColor)
+        const ecoText = `${ecoStats.treeCount} trees to offset ${formatCO2ForPdf(ecoStats.totalCO2Kg)} CO2`
+        const ecoWidth = pdf.getTextWidth(ecoText)
+        pdf.text(ecoText, brandingCenterX - (ecoWidth / 2), brandY + 12)
+      }
 
       // Attribution (centered under word cloud)
       renderAttribution(pdf, wordCloudBounds, pageHeight - 3, mutedColor)
