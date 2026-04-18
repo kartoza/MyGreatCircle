@@ -494,11 +494,23 @@ export function usePdfGeneration() {
       const textColor = brightness > 128 ? [80, 80, 80] : [200, 200, 200]
       const mutedColor = brightness > 128 ? [100, 100, 100] : [160, 160, 160]
 
-      // Map takes most of the page, leaving room for word cloud at bottom
-      const mapHeight = pageHeight - 45
+      // Title and subtitle (matching fact sheet)
+      pdf.setFontSize(32)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(...textColor)
+      pdf.text('MyGreatCircle', pageWidth / 2, 20, { align: 'center' })
 
-      // Full-bleed map
-      const posterMapBounds = { x: 0, y: 0, width: pageWidth, height: mapHeight }
+      pdf.setFontSize(14)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(...mutedColor)
+      pdf.text('Your Life in Places', pageWidth / 2, 28, { align: 'center' })
+
+      // Map takes most of the page, leaving room for title at top and word cloud at bottom
+      const mapTop = 35
+      const mapHeight = pageHeight - mapTop - 45
+
+      // Full-bleed map (with top margin for title)
+      const posterMapBounds = { x: 0, y: mapTop, width: pageWidth, height: mapHeight }
 
       if (svgElement) {
         const svgClone = svgElement.cloneNode(true)
@@ -509,7 +521,7 @@ export function usePdfGeneration() {
 
         await pdf.svg(svgClone, {
           x: 0,
-          y: 0,
+          y: mapTop,
           width: pageWidth,
           height: mapHeight,
         })
@@ -539,9 +551,10 @@ export function usePdfGeneration() {
       })
 
       // Compact word cloud in a rectangular block at the bottom (4 lines max)
+      const mapBottom = mapTop + mapHeight
       const wordCloudBounds = {
         x: 10,
-        y: mapHeight + 3,
+        y: mapBottom + 3,
         width: pageWidth - 120, // Leave room for branding on right
         height: 32, // Enough for 4 lines
       }
@@ -562,7 +575,7 @@ export function usePdfGeneration() {
 
       // Kartoza branding on bottom right
       const brandX = pageWidth - 90
-      const brandY = mapHeight + 12
+      const brandY = mapBottom + 12
       renderKartozaBranding(pdf, brandX, brandY)
 
       // Center URL under branding - calculate actual branding width
