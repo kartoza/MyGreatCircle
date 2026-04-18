@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   SimpleGrid,
   Box,
@@ -6,24 +7,56 @@ import {
   Text,
   Button,
   Progress,
-  Divider,
   useDisclosure,
+  useToast,
 } from '@chakra-ui/react'
 import { EmailModal } from './EmailModal'
+import { MerchCheckoutModal } from './MerchCheckoutModal'
 
 export function OutputCards({
   onDownloadFactSheet,
   onDownloadPoster,
   onDownloadGif,
+  onGenerateMerchImage,
   isGenerating,
   isGeneratingGif,
   gifProgress,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const {
+    isOpen: isCheckoutOpen,
+    onOpen: onCheckoutOpen,
+    onClose: onCheckoutClose,
+  } = useDisclosure()
+  const toast = useToast()
 
-  const handleMerchClick = (item) => {
-    // Open email modal to capture interest
-    onOpen()
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [merchImageUrl, setMerchImageUrl] = useState(null)
+  const [isGeneratingMerchImage, setIsGeneratingMerchImage] = useState(false)
+
+  const handleMerchClick = async (category) => {
+    // Generate image for merchandise if handler provided
+    if (onGenerateMerchImage) {
+      setIsGeneratingMerchImage(true)
+      try {
+        const imageUrl = await onGenerateMerchImage()
+        setMerchImageUrl(imageUrl)
+        setSelectedCategory(category)
+        onCheckoutOpen()
+      } catch (error) {
+        toast({
+          title: 'Image generation failed',
+          description: error.message,
+          status: 'error',
+          duration: 5000,
+        })
+      } finally {
+        setIsGeneratingMerchImage(false)
+      }
+    } else {
+      // Fallback to email modal for interest capture
+      onOpen()
+    }
   }
 
   return (
@@ -197,19 +230,6 @@ export function OutputCards({
             boxShadow: 'lg',
           }}
         >
-          <Box
-            position="absolute"
-            top={2}
-            right={2}
-            bg="orange.500"
-            px={2}
-            py={0.5}
-            borderRadius="md"
-            fontSize="xs"
-            fontWeight="bold"
-          >
-            COMING SOON
-          </Box>
           <VStack spacing={4} align="stretch" flex="1">
             <Box textAlign="center">
               <Text fontSize="3xl" mb={2}>👕</Text>
@@ -223,15 +243,16 @@ export function OutputCards({
             </Text>
             <Box flex="1" />
             <Button
-              variant="outline"
               colorScheme="orange"
               onClick={() => handleMerchClick('tshirt')}
+              isLoading={isGeneratingMerchImage && selectedCategory === 'tshirt'}
+              loadingText="Preparing..."
               width="100%"
               px={8}
               py={6}
               fontSize="sm"
             >
-              Get Notified
+              Order Now
             </Button>
           </VStack>
         </Box>
@@ -254,19 +275,6 @@ export function OutputCards({
             boxShadow: 'lg',
           }}
         >
-          <Box
-            position="absolute"
-            top={2}
-            right={2}
-            bg="pink.500"
-            px={2}
-            py={0.5}
-            borderRadius="md"
-            fontSize="xs"
-            fontWeight="bold"
-          >
-            COMING SOON
-          </Box>
           <VStack spacing={4} align="stretch" flex="1">
             <Box textAlign="center">
               <Text fontSize="3xl" mb={2}>🖼️</Text>
@@ -280,15 +288,16 @@ export function OutputCards({
             </Text>
             <Box flex="1" />
             <Button
-              variant="outline"
               colorScheme="pink"
               onClick={() => handleMerchClick('canvas')}
+              isLoading={isGeneratingMerchImage && selectedCategory === 'canvas'}
+              loadingText="Preparing..."
               width="100%"
               px={8}
               py={6}
               fontSize="sm"
             >
-              Get Notified
+              Order Now
             </Button>
           </VStack>
         </Box>
@@ -311,20 +320,6 @@ export function OutputCards({
             boxShadow: 'lg',
           }}
         >
-          <Box
-            position="absolute"
-            top={2}
-            right={2}
-            bg="yellow.500"
-            color="gray.900"
-            px={2}
-            py={0.5}
-            borderRadius="md"
-            fontSize="xs"
-            fontWeight="bold"
-          >
-            COMING SOON
-          </Box>
           <VStack spacing={4} align="stretch" flex="1">
             <Box textAlign="center">
               <Text fontSize="3xl" mb={2}>☕</Text>
@@ -338,15 +333,16 @@ export function OutputCards({
             </Text>
             <Box flex="1" />
             <Button
-              variant="outline"
               colorScheme="yellow"
               onClick={() => handleMerchClick('mug')}
+              isLoading={isGeneratingMerchImage && selectedCategory === 'mug'}
+              loadingText="Preparing..."
               width="100%"
               px={8}
               py={6}
               fontSize="sm"
             >
-              Get Notified
+              Order Now
             </Button>
           </VStack>
         </Box>
@@ -356,6 +352,13 @@ export function OutputCards({
         isOpen={isOpen}
         onClose={onClose}
         onSubmit={() => onClose()}
+      />
+
+      <MerchCheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={onCheckoutClose}
+        category={selectedCategory}
+        imageUrl={merchImageUrl}
       />
     </>
   )

@@ -26,6 +26,31 @@ function getErrorInfo(errorType) {
   }
 }
 
+/**
+ * Source indicator showing whether geocoding came from GeoNames or Nominatim
+ */
+function SourceIcon({ source }) {
+  if (!source) return null
+
+  if (source === 'geonames') {
+    return (
+      <Tooltip label="Source: GeoNames" placement="top">
+        <Text fontSize="xs" color="blue.300" fontWeight="bold">G</Text>
+      </Tooltip>
+    )
+  }
+
+  if (source === 'nominatim') {
+    return (
+      <Tooltip label="Source: Nominatim (OpenStreetMap)" placement="top">
+        <Text fontSize="xs" color="green.300" fontWeight="bold">N</Text>
+      </Tooltip>
+    )
+  }
+
+  return null
+}
+
 function ConfidenceIcon({ confidence, errorType, onRetry, isRetrying }) {
   if (confidence === 'high') {
     return (
@@ -122,6 +147,9 @@ export function PlaceList({ places, onPlaceClick, onRetryPlace, retryingPlaceId 
                 ? `${place.yearStart}-${place.yearEnd}`
                 : place.yearStart}
             </Badge>
+          )}
+          {place.source && (
+            <SourceIcon source={place.source} />
           )}
           <ConfidenceIcon
             confidence={place.confidence}

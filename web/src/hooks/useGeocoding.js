@@ -107,12 +107,13 @@ export function useGeocoding() {
             name: place.displayName,
             lat: place.lat,
             lng: place.lng,
-            confidence: 'high'
+            confidence: 'high',
+            source: place.source || 'nominatim',
           }],
           cachedAt: new Date().toISOString(),
         }
         saveCache(cache)
-        console.log(`[Tier 2] Server cache hit: "${query}"`)
+        console.log(`[Tier 2] Server cache hit: "${query}" (source: ${place.source})`)
         return { results: cache[normalized].results, fromServerCache: true }
       }
     } catch (e) {
@@ -130,6 +131,7 @@ export function useGeocoding() {
         lat: r.lat,
         lng: r.lng,
         confidence: r.confidence,
+        source: 'nominatim',
       }))
 
       cache[normalized] = {
@@ -180,6 +182,7 @@ export function useGeocoding() {
             confidence: best.confidence || 'high',
             alternatives: cached.results.slice(1),
             geocodedName: best.name,
+            source: best.source || 'nominatim',
           }
         } else {
           geocodedPlaces[index] = { ...place, confidence: 'failed', alternatives: [] }
@@ -213,10 +216,11 @@ export function useGeocoding() {
               confidence: 'high',
               alternatives: [],
               geocodedName: place.displayName,
+              source: place.source || 'nominatim',
             }
             // Cache locally
             cache[normalizedQuery] = {
-              results: [{ name: place.displayName, lat: place.lat, lng: place.lng, confidence: 'high' }],
+              results: [{ name: place.displayName, lat: place.lat, lng: place.lng, confidence: 'high', source: place.source || 'nominatim' }],
               cachedAt: new Date().toISOString(),
             }
             delete queryToPlaceIndex[normalizedQuery]
@@ -251,6 +255,7 @@ export function useGeocoding() {
             confidence: best.confidence || 'high',
             alternatives: result.results.slice(1),
             geocodedName: best.name,
+            source: best.source || 'nominatim',
           }
         } else {
           // No results found - this is a "no match" error
@@ -308,6 +313,7 @@ export function useGeocoding() {
           confidence: best.confidence || 'high',
           alternatives: result.results.slice(1),
           geocodedName: best.name,
+          source: best.source || 'nominatim',
           errorType: undefined,
           errorMessage: undefined,
         }

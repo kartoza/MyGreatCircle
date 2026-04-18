@@ -1,4 +1,4 @@
-.PHONY: all build run test lint clean dev web-dev web-build web-install docs-dev docs-build
+.PHONY: all build run test lint clean dev web-dev web-build web-install docs-dev docs-build geonames-import
 
 VERSION := 0.1.0
 BINARY := mygreatcircle
@@ -9,6 +9,7 @@ all: build
 
 build:
 	$(GO) build $(GOFLAGS) -o $(BINARY) ./cmd/mygreatcircle
+	$(GO) build $(GOFLAGS) -o geonames-import ./cmd/geonames-import
 
 run: build
 	./$(BINARY)
@@ -44,3 +45,11 @@ docs-dev:
 
 docs-build:
 	cd docs && mkdocs build
+
+# GeoNames data import
+geonames-import: build
+	./geonames-import -files=allCountries
+
+geonames-import-cities:
+	$(GO) build $(GOFLAGS) -o geonames-import ./cmd/geonames-import
+	./geonames-import -files=cities15000

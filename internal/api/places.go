@@ -17,6 +17,7 @@ type ResolvedPlace struct {
 	DisplayName string  `json:"displayName"`
 	Lat         float64 `json:"lat"`
 	Lng         float64 `json:"lng"`
+	Source      string  `json:"source"` // "geonames" or "nominatim"
 }
 
 // LookupResponse is the response for /api/places/lookup
@@ -71,6 +72,7 @@ func (s *Server) handlePlacesLookup(w http.ResponseWriter, r *http.Request) {
 				DisplayName: place.DisplayName,
 				Lat:         place.Lat,
 				Lng:         place.Lng,
+				Source:      place.Source,
 			}
 			continue
 		}
@@ -90,6 +92,7 @@ func (s *Server) handlePlacesLookup(w http.ResponseWriter, r *http.Request) {
 				DisplayName: best.DisplayName,
 				Lat:         best.Lat,
 				Lng:         best.Lng,
+				Source:      best.Source,
 			}
 			continue
 		}

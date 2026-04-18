@@ -39,25 +39,34 @@ func (r *SQLiteRepository) migrate() error {
 		lat             REAL NOT NULL,
 		lng             REAL NOT NULL,
 		importance      REAL,
+		source          TEXT DEFAULT 'nominatim',
 		created_at      TEXT DEFAULT (datetime('now')),
 		hit_count       INTEGER DEFAULT 1
 	);
 	CREATE INDEX IF NOT EXISTS idx_places_query ON places (query_normalized);
 	`
-	_, err := r.db.Exec(schema)
-	return err
+	if _, err := r.db.Exec(schema); err != nil {
+		return err
+	}
+
+	// Migration: add source column if it doesn't exist
+	_, err := r.db.Exec(`ALTER TABLE places ADD COLUMN source TEXT DEFAULT 'nominatim'`)
+	// Ignore error if column already exists
+	_ = err
+
+	return nil
 }
 
 func (r *SQLiteRepository) FindExact(ctx context.Context, query string) (*Place, error) {
 	normalized := NormalizeQuery(query)
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, query_normalized, display_name, lat, lng, importance, created_at, hit_count
+		SELECT id, query_normalized, display_name, lat, lng, importance, COALESCE(source, 'nominatim'), created_at, hit_count
 		FROM places WHERE query_normalized = ?
 	`, normalized)
 
 	var p Place
 	var createdAt string
-	err := row.Scan(&p.ID, &p.QueryNormalized, &p.DisplayName, &p.Lat, &p.Lng, &p.Importance, &createdAt, &p.HitCount)
+	err := row.Scan(&p.ID, &p.QueryNormalized, &p.DisplayName, &p.Lat, &p.Lng, &p.Importance, &p.Source, &createdAt, &p.HitCount)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -78,7 +87,7 @@ func (r *SQLiteRepository) FindFuzzy(ctx context.Context, query string, maxDista
 	// Get candidates with matching prefix (first 3 chars)
 	prefix := normalized[:3]
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, query_normalized, display_name, lat, lng, importance, created_at, hit_count
+		SELECT id, query_normalized, display_name, lat, lng, importance, COALESCE(source, 'nominatim'), created_at, hit_count
 		FROM places WHERE query_normalized LIKE ? || '%'
 	`, prefix)
 	if err != nil {
@@ -90,7 +99,7 @@ func (r *SQLiteRepository) FindFuzzy(ctx context.Context, query string, maxDista
 	for rows.Next() {
 		var p Place
 		var createdAt string
-		if err := rows.Scan(&p.ID, &p.QueryNormalized, &p.DisplayName, &p.Lat, &p.Lng, &p.Importance, &createdAt, &p.HitCount); err != nil {
+		if err := rows.Scan(&p.ID, &p.QueryNormalized, &p.DisplayName, &p.Lat, &p.Lng, &p.Importance, &p.Source, &createdAt, &p.HitCount); err != nil {
 			return nil, err
 		}
 		p.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
@@ -106,16 +115,21 @@ func (r *SQLiteRepository) FindFuzzy(ctx context.Context, query string, maxDista
 }
 
 func (r *SQLiteRepository) Save(ctx context.Context, place *Place) error {
+	source := place.Source
+	if source == "" {
+		source = "nominatim"
+	}
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO places (query_normalized, display_name, lat, lng, importance)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO places (query_normalized, display_name, lat, lng, importance, source)
+		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT(query_normalized) DO UPDATE SET
 			display_name = excluded.display_name,
 			lat = excluded.lat,
 			lng = excluded.lng,
 			importance = excluded.importance,
+			source = excluded.source,
 			hit_count = hit_count + 1
-	`, NormalizeQuery(place.QueryNormalized), place.DisplayName, place.Lat, place.Lng, place.Importance)
+	`, NormalizeQuery(place.QueryNormalized), place.DisplayName, place.Lat, place.Lng, place.Importance, source)
 	return err
 }
 

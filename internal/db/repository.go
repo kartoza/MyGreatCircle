@@ -14,6 +14,7 @@ type Place struct {
 	Lat             float64   `json:"lat"`
 	Lng             float64   `json:"lng"`
 	Importance      float64   `json:"importance"`
+	Source          string    `json:"source"` // "geonames" or "nominatim"
 	CreatedAt       time.Time `json:"createdAt"`
 	HitCount        int       `json:"hitCount"`
 }

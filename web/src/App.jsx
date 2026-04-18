@@ -41,6 +41,7 @@ import { PlaceInput } from './components/PlaceInput'
 import { useGeocoding } from './hooks/useGeocoding'
 import { usePdfGeneration } from './hooks/usePdfGeneration'
 import { useGifGeneration } from './hooks/useGifGeneration'
+import { useMerchImage } from './hooks/useMerchImage'
 
 import { parsePlaceInput } from './lib/parser'
 import { computeJourneyStats } from './lib/geo'
@@ -80,6 +81,7 @@ function App() {
   const { geocodePlaces, retryPlace, isLoading: isGeocoding } = useGeocoding()
   const { generateFactSheet, generatePoster, isGenerating } = usePdfGeneration()
   const { generateGif, isGenerating: isGeneratingGif, progress: gifProgress } = useGifGeneration()
+  const { generateMerchImage } = useMerchImage()
   const [retryingPlaceId, setRetryingPlaceId] = useState(null)
 
   const displayPlaces = showDemo && places.length === 0 ? DEMO_PLACES : places
@@ -196,6 +198,13 @@ function App() {
       height: 450,
       frameDelay: 80,
       arcSegmentsPerFrame: 5,
+    })
+  }
+
+  const handleGenerateMerchImage = async () => {
+    return await generateMerchImage(displayPlaces, theme, {
+      width: 2400,
+      height: 2400,
     })
   }
 
@@ -767,6 +776,7 @@ function App() {
               onDownloadFactSheet={handleDownloadFactSheet}
               onDownloadPoster={handleDownloadPoster}
               onDownloadGif={handleDownloadGif}
+              onGenerateMerchImage={handleGenerateMerchImage}
               isGenerating={isGenerating}
               isGeneratingGif={isGeneratingGif}
               gifProgress={gifProgress}
