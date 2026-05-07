@@ -796,7 +796,7 @@ function App() {
               onDownloadFactSheet={handleDownloadFactSheet}
               onDownloadPoster={handleDownloadPoster}
               onDownloadGif={handleDownloadGif}
-              onGenerateMerchImage={generateMerchImage}
+              onGenerateMerchImage={handleGenerateMerchImage}
               isGenerating={isGenerating}
               isGeneratingGif={isGeneratingGif}
               gifProgress={gifProgress}

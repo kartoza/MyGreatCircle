@@ -7,13 +7,11 @@ import {
   Text,
   Button,
   Progress,
-  useDisclosure,
   useToast,
-  IconButton,
   HStack,
 } from '@chakra-ui/react'
 import { MerchProductBrowser } from './MerchProductBrowser'
-import { MerchCheckoutModal } from './MerchCheckoutModal'
+import { useGelato } from '../hooks/useGelato'
 
 /**
  * Maps our display categories to Gelato product categories
@@ -52,39 +50,46 @@ export function OutputCards({
   gifProgress,
 }) {
   const [activeSection, setActiveSection] = useState(null)
-  const [merchImageUrl, setMerchImageUrl] = useState(null)
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [isGeneratingMerchImage, setIsGeneratingMerchImage] = useState(false)
-
-  const {
-    isOpen: isCheckoutOpen,
-    onOpen: onCheckoutOpen,
-    onClose: onCheckoutClose,
-  } = useDisclosure()
+  const [journeyImageDataUrl, setJourneyImageDataUrl] = useState(null)
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const { createCheckout } = useGelato()
   const toast = useToast()
 
-  const handleShopClick = (sectionKey) => {
-    setActiveSection(activeSection === sectionKey ? null : sectionKey)
+  const handleShopClick = async (sectionKey) => {
+    if (activeSection === sectionKey) {
+      setActiveSection(null)
+      return
+    }
+    setActiveSection(sectionKey)
+
+    // Generate journey image for mockup previews if not already done
+    if (!journeyImageDataUrl && onGenerateMerchImage) {
+      try {
+        const imageUrl = await onGenerateMerchImage()
+        setJourneyImageDataUrl(imageUrl)
+      } catch (err) {
+        console.error('Failed to generate journey image for previews:', err)
+      }
+    }
   }
 
   const handleSelectProduct = async (product) => {
-    if (onGenerateMerchImage) {
-      setIsGeneratingMerchImage(true)
-      try {
-        const imageUrl = await onGenerateMerchImage()
-        setMerchImageUrl(imageUrl)
-        setSelectedProduct(product)
-        onCheckoutOpen()
-      } catch (error) {
-        toast({
-          title: 'Image generation failed',
-          description: error.message,
-          status: 'error',
-          duration: 5000,
-        })
-      } finally {
-        setIsGeneratingMerchImage(false)
-      }
+    setIsCheckingOut(true)
+    try {
+      await createCheckout(
+        product.id,
+        product.variants?.[0]?.id || '',
+        journeyImageDataUrl || '',
+      )
+    } catch (error) {
+      toast({
+        title: 'Checkout unavailable',
+        description: 'Merchandise ordering is coming soon. Stay tuned!',
+        status: 'info',
+        duration: 5000,
+      })
+    } finally {
+      setIsCheckingOut(false)
     }
   }
 
@@ -310,18 +315,12 @@ export function OutputCards({
           </HStack>
           <MerchProductBrowser
             onSelectProduct={handleSelectProduct}
-            isDisabled={isGeneratingMerchImage}
+            isDisabled={isCheckingOut}
             filterCategories={SHOP_SECTIONS[activeSection].categories}
+            journeyImageDataUrl={journeyImageDataUrl}
           />
         </Box>
       )}
-
-      <MerchCheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={onCheckoutClose}
-        category={selectedProduct?.category}
-        imageUrl={merchImageUrl}
-      />
     </>
   )
 }
