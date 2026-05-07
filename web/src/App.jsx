@@ -592,53 +592,86 @@ function App() {
             justify="center"
           >
             <ScaleFade in={showWelcome} initialScale={0.9}>
-              <VStack
-                spacing={8}
-                maxW="600px"
-                textAlign="center"
-                p={8}
-              >
-                <Heading
-                  size="3xl"
-                  bgGradient="linear(to-r, teal.300, cyan.400, blue.400)"
-                  bgClip="text"
-                  fontWeight="extrabold"
+              <VStack spacing={0} align="center">
+                {/* Beautiful circle container */}
+                <Flex
+                  w={{ base: '480px', md: '600px', lg: '700px' }}
+                  h={{ base: '480px', md: '600px', lg: '700px' }}
+                  borderRadius="50%"
+                  border="2px solid"
+                  borderColor="whiteAlpha.200"
+                  bg="blackAlpha.600"
+                  backdropFilter="blur(20px)"
+                  boxShadow="0 0 80px 20px rgba(20, 184, 166, 0.15), inset 0 0 60px 10px rgba(20, 184, 166, 0.05)"
+                  align="center"
+                  justify="center"
+                  position="relative"
+                  _before={{
+                    content: '""',
+                    position: 'absolute',
+                    inset: '-4px',
+                    borderRadius: '50%',
+                    border: '1px solid',
+                    borderColor: 'whiteAlpha.100',
+                  }}
+                  _after={{
+                    content: '""',
+                    position: 'absolute',
+                    inset: '8px',
+                    borderRadius: '50%',
+                    border: '1px solid',
+                    borderColor: 'whiteAlpha.100',
+                  }}
                 >
-                  MyGreatCircle
-                </Heading>
-                <Text fontSize="xl" color="gray.300">
-                  Transform the places that shaped your life into a stunning visualization.
-                  Watch your journey unfold as luminous arcs across the globe.
-                </Text>
-                <Text fontSize="md" color="gray.500">
-                  Currently showing a demo journey. Enter your own places to see your story.
-                </Text>
-                <HStack spacing={4}>
-                  <Button
-                    size="lg"
-                    bgGradient="linear(to-r, teal.400, cyan.500)"
-                    color="white"
-                    _hover={{
-                      bgGradient: 'linear(to-r, teal.500, cyan.600)',
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 10px 40px -10px rgba(20, 184, 166, 0.5)',
-                    }}
-                    onClick={handleStartJourney}
+                  <VStack
+                    spacing={4}
+                    textAlign="center"
+                    px={10}
+                    maxW="75%"
+                    position="relative"
+                    zIndex={1}
                   >
-                    Start Your Journey
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    colorScheme="teal"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Import Journey
-                  </Button>
-                </HStack>
-                <Text fontSize="sm" color="gray.600">
-                  No account needed. Your data stays in your browser.
-                </Text>
+                    <Heading
+                      size="3xl"
+                      color="teal.300"
+                      fontWeight="extrabold"
+                    >
+                      MyGreatCircle
+                    </Heading>
+                    <Text fontSize="md" color="gray.300" lineHeight="tall">
+                      Transform the places that shaped your life into a stunning visualization.
+                    </Text>
+                    <Text fontSize="sm" color="gray.500">
+                      Enter your places to see your story unfold as luminous arcs across the globe.
+                    </Text>
+                    <HStack spacing={4} mt={2}>
+                      <Button
+                        size="lg"
+                        bg="teal.500"
+                        color="white"
+                        _hover={{
+                          bg: 'teal.400',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 10px 40px -10px rgba(20, 184, 166, 0.5)',
+                        }}
+                        onClick={handleStartJourney}
+                      >
+                        Start Your Journey
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        colorScheme="teal"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Import Journey
+                      </Button>
+                    </HStack>
+                    <Text fontSize="xs" color="gray.600">
+                      No account needed. Your data stays in your browser.
+                    </Text>
+                  </VStack>
+                </Flex>
               </VStack>
             </ScaleFade>
           </Flex>
@@ -776,10 +809,12 @@ function App() {
               onDownloadFactSheet={handleDownloadFactSheet}
               onDownloadPoster={handleDownloadPoster}
               onDownloadGif={handleDownloadGif}
-              onGenerateMerchImage={handleGenerateMerchImage}
+              onGenerateMerchImage={generateMerchImage}
               isGenerating={isGenerating}
               isGeneratingGif={isGeneratingGif}
               gifProgress={gifProgress}
+              places={displayPlaces}
+              theme={theme}
             />
           </ModalBody>
         </ModalContent>
