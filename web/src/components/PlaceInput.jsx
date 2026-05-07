@@ -71,8 +71,8 @@ export function PlaceInput({ onSubmit, isLoading, initialValue = '', embedded = 
 
       <Box flex="1" display="flex" flexDirection="column" minH={0}>
         <Text mb={3} fontSize="sm" color="gray.400" flexShrink={0}>
-          Enter places you've lived or visited, one per line.
-          Dates are optional — add them like "London 1990" or "Paris 2000-2005".
+          Enter places you&apos;ve lived or visited, one per line.
+          Dates are optional — add them like &quot;London 1990&quot; or &quot;Paris 2000-2005&quot;.
         </Text>
         <Textarea
           value={inputText}
