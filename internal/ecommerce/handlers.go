@@ -68,10 +68,15 @@ type MockupRequest struct {
 
 // MockupResponse is the response for mockup generation
 type MockupResponse struct {
-	MockupURL   string  `json:"mockupUrl"`
-	ProductName string  `json:"productName"`
-	Price       float64 `json:"price"`
-	Currency    string  `json:"currency"`
+	MockupURLs  []MockupURL `json:"mockupUrls"`
+	ProductName string      `json:"productName"`
+	Price       float64     `json:"price"`
+	Currency    string      `json:"currency"`
+}
+
+// MockupURL is a single mockup image
+type MockupURL struct {
+	URL string `json:"url"`
 }
 
 // CheckoutRequest is the request body for creating a checkout session
@@ -177,11 +182,19 @@ func (s *MerchService) HandleCreateMockup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Create mockup
-	mockup, err := s.gelato.CreateMockup(req.ProductID, imageURL)
+	// Create mockup task
+	mockupTask, err := s.gelato.CreateMockup(req.ProductID, imageURL)
 	if err != nil {
 		log.Printf("Mockup creation failed: %v", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create mockup")
+		return
+	}
+
+	// Poll for completion (up to 30s)
+	mockup, err := s.gelato.WaitForMockup(mockupTask.TaskID, 30*time.Second)
+	if err != nil {
+		log.Printf("Mockup polling failed: %v", err)
+		writeError(w, http.StatusInternalServerError, "Mockup generation timed out")
 		return
 	}
 
@@ -199,8 +212,14 @@ func (s *MerchService) HandleCreateMockup(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	// Map mockup URLs
+	urls := make([]MockupURL, 0, len(mockup.MockupURLs))
+	for _, mu := range mockup.MockupURLs {
+		urls = append(urls, MockupURL{URL: mu.URL})
+	}
+
 	writeJSON(w, http.StatusOK, MockupResponse{
-		MockupURL:   mockup.MockupURL,
+		MockupURLs:  urls,
 		ProductName: productName,
 		Price:       price,
 		Currency:    currency,

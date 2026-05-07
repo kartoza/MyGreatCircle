@@ -55,15 +55,22 @@ type GelatoPrice struct {
 
 // GelatoMockupRequest represents a mockup generation request
 type GelatoMockupRequest struct {
-	ProductID string `json:"productId"`
-	ImageURL  string `json:"imageUrl"`
+	ProductUID string                  `json:"productUid"`
+	FileURL    string                  `json:"fileUrl"`
+	MockupUID  string                  `json:"mockupUid,omitempty"`
 }
 
 // GelatoMockupResponse represents the mockup generation response
 type GelatoMockupResponse struct {
-	TaskID    string `json:"taskId"`
-	MockupURL string `json:"mockupUrl"`
-	Status    string `json:"status"`
+	TaskID     string               `json:"taskId"`
+	Status     string               `json:"status"` // "created", "completed", "failed"
+	MockupURLs []GelatoMockupURL    `json:"mockupUrls,omitempty"`
+}
+
+// GelatoMockupURL is a single mockup image URL in the response
+type GelatoMockupURL struct {
+	MockupUID string `json:"mockupUid"`
+	URL       string `json:"url"`
 }
 
 // GelatoOrderRequest represents an order creation request
@@ -681,10 +688,10 @@ func (c *GelatoClient) UploadImage(imageDataURL string) (string, error) {
 }
 
 // CreateMockup generates a product mockup with the user's image
-func (c *GelatoClient) CreateMockup(productID, imageURL string) (*GelatoMockupResponse, error) {
+func (c *GelatoClient) CreateMockup(productUID, fileURL string) (*GelatoMockupResponse, error) {
 	reqBody := GelatoMockupRequest{
-		ProductID: productID,
-		ImageURL:  imageURL,
+		ProductUID: productUID,
+		FileURL:    fileURL,
 	}
 
 	respBody, err := c.doRequest("POST", "/mockup-tasks", reqBody)
@@ -698,6 +705,25 @@ func (c *GelatoClient) CreateMockup(productID, imageURL string) (*GelatoMockupRe
 	}
 
 	return &response, nil
+}
+
+// WaitForMockup polls for mockup completion with timeout
+func (c *GelatoClient) WaitForMockup(taskID string, timeout time.Duration) (*GelatoMockupResponse, error) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		resp, err := c.GetMockupStatus(taskID)
+		if err != nil {
+			return nil, err
+		}
+		if resp.Status == "completed" {
+			return resp, nil
+		}
+		if resp.Status == "failed" {
+			return nil, fmt.Errorf("mockup generation failed")
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return nil, fmt.Errorf("mockup generation timed out")
 }
 
 // GetMockupStatus checks the status of a mockup task

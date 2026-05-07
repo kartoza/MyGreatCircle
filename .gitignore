@@ -44,3 +44,5 @@ PROMPT.log
 data/geonames/
 geonames-import
 git.sh
+screenshots_nocommit/
+.claude
