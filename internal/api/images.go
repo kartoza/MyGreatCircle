@@ -59,7 +59,7 @@ func (s *ImageStore) cleanup() {
 		if now.Sub(created) > time.Hour {
 			// Remove old image
 			filePath := filepath.Join(s.baseDir, id+".png")
-			os.Remove(filePath)
+			_ = os.Remove(filePath)
 			delete(s.images, id)
 		}
 	}
@@ -146,7 +146,7 @@ func (s *Server) handleImageUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(UploadImageResponse{URL: url})
+	_ = json.NewEncoder(w).Encode(UploadImageResponse{URL: url})
 }
 
 // handleImageGet serves stored images
@@ -168,5 +168,5 @@ func (s *Server) handleImageGet(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "public, max-age=3600")
-	io.Copy(w, strings.NewReader(string(data)))
+	_, _ = io.Copy(w, strings.NewReader(string(data)))
 }

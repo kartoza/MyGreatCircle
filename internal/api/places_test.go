@@ -20,7 +20,7 @@ func TestPlacesLookup_ExactMatch(t *testing.T) {
 
 	// Pre-populate cache
 	ctx := context.Background()
-	repo.Save(ctx, &db.Place{
+	_ = repo.Save(ctx, &db.Place{
 		QueryNormalized: "cape town",
 		DisplayName:     "Cape Town, Western Cape, South Africa",
 		Lat:             -33.92,

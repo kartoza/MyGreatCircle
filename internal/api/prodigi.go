@@ -271,7 +271,7 @@ func (s *Server) handleProdigiQuote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to contact Prodigi", http.StatusBadGateway)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -289,14 +289,14 @@ func (s *Server) handleProdigiQuote(w http.ResponseWriter, r *http.Request) {
 	var shippingCost float64
 	if len(quoteResp.Outcome.Quotes) > 0 {
 		// Parse the cost amount
-		fmt.Sscanf(quoteResp.Outcome.Quotes[0].CostSummary.Amount, "%f", &shippingCost)
+		_, _ = fmt.Sscanf(quoteResp.Outcome.Quotes[0].CostSummary.Amount, "%f", &shippingCost)
 	}
 
 	productCost := product.MinPrice * float64(req.Quantity)
 	total := productCost + shippingCost
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(GetQuoteResponse{
+	_ = json.NewEncoder(w).Encode(GetQuoteResponse{
 		ProductCost:  productCost,
 		ShippingCost: shippingCost,
 		Total:        total,
@@ -391,7 +391,7 @@ func (s *Server) handleProdigiCreateOrder(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Failed to contact Prodigi", http.StatusBadGateway)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, _ := io.ReadAll(resp.Body)
 
@@ -411,12 +411,12 @@ func (s *Server) handleProdigiCreateOrder(w http.ResponseWriter, r *http.Request
 	currency := "USD"
 	if len(orderResp.Outcome.Charges) > 0 {
 		charge := orderResp.Outcome.Charges[0]
-		fmt.Sscanf(charge.TotalCost.Amount, "%f", &total)
+		_, _ = fmt.Sscanf(charge.TotalCost.Amount, "%f", &total)
 		currency = charge.TotalCost.Currency
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(CreateOrderResponse{
+	_ = json.NewEncoder(w).Encode(CreateOrderResponse{
 		OrderID:  orderResp.Outcome.ID,
 		Status:   orderResp.Outcome.Status.Stage,
 		Total:    total,

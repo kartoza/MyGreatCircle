@@ -100,7 +100,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Parse file list
 	fileList := parseFileList(*files)
@@ -175,7 +175,7 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
@@ -185,7 +185,7 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	// Show progress
 	size := resp.ContentLength
@@ -196,7 +196,7 @@ func downloadFile(filepath string, url string) error {
 	for {
 		n, err := resp.Body.Read(buf)
 		if n > 0 {
-			out.Write(buf[:n])
+			_, _ = out.Write(buf[:n])
 			downloaded += int64(n)
 
 			if time.Since(lastPrint) > time.Second {
@@ -228,7 +228,7 @@ func importZipFile(ctx context.Context, repo db.PlaceRepository, zipPath string,
 	if err != nil {
 		return 0, err
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	count := 0
 	batch := make([]*db.Place, 0, batchSize)
@@ -282,7 +282,7 @@ func importZipFile(ctx context.Context, repo db.PlaceRepository, zipPath string,
 			}
 		}
 
-		rc.Close()
+		_ = rc.Close()
 
 		if err := scanner.Err(); err != nil {
 			log.Printf("Warning: Scanner error: %v", err)
