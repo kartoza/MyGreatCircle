@@ -135,7 +135,7 @@ export function InsightsPanel({
         <Stat bg="gray.700" p={4} borderRadius="md">
           <StatLabel color="gray.400">Places</StatLabel>
           <StatNumber>{stats.totalPlaces}</StatNumber>
-          <StatHelpText>I've been</StatHelpText>
+          <StatHelpText>I&apos;ve been</StatHelpText>
         </Stat>
 
         <Stat bg="gray.700" p={4} borderRadius="md">

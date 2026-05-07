@@ -23,7 +23,7 @@ func NewSQLiteRepository(dbPath string) (*SQLiteRepository, error) {
 
 	repo := &SQLiteRepository{db: db}
 	if err := repo.migrate(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func (r *SQLiteRepository) FindFuzzy(ctx context.Context, query string, maxDista
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []Place
 	for rows.Next() {

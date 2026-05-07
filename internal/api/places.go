@@ -67,7 +67,7 @@ func (s *Server) handlePlacesLookup(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if place != nil {
-			s.placeRepo.IncrementHitCount(ctx, place.ID)
+			_ = s.placeRepo.IncrementHitCount(ctx, place.ID)
 			resolved[normalized] = ResolvedPlace{
 				DisplayName: place.DisplayName,
 				Lat:         place.Lat,
@@ -87,7 +87,7 @@ func (s *Server) handlePlacesLookup(w http.ResponseWriter, r *http.Request) {
 		if len(fuzzyResults) > 0 {
 			// Return best match (first result)
 			best := fuzzyResults[0]
-			s.placeRepo.IncrementHitCount(ctx, best.ID)
+			_ = s.placeRepo.IncrementHitCount(ctx, best.ID)
 			resolved[normalized] = ResolvedPlace{
 				DisplayName: best.DisplayName,
 				Lat:         best.Lat,
@@ -102,7 +102,7 @@ func (s *Server) handlePlacesLookup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(LookupResponse{
+	_ = json.NewEncoder(w).Encode(LookupResponse{
 		Resolved:   resolved,
 		Unresolved: unresolved,
 	})
@@ -133,5 +133,5 @@ func (s *Server) handlePlacesSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(SubmitResponse{Saved: saved})
+	_ = json.NewEncoder(w).Encode(SubmitResponse{Saved: saved})
 }

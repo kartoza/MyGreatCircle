@@ -430,7 +430,7 @@ export function MerchCheckoutModal({
       </Box>
 
       <Text textAlign="center" color="gray.400">
-        You'll receive an email confirmation when your order ships.
+        You&apos;ll receive an email confirmation when your order ships.
         Your unique journey map is being prepared for printing!
       </Text>
 

@@ -38,7 +38,7 @@ export function EmailModal({ isOpen, onClose, onSubmit }) {
           <VStack spacing={4}>
             <Text color="gray.400">
               Enter your email to unlock the high-resolution poster download.
-              We'll also send you updates about new themes and features.
+              We&apos;ll also send you updates about new themes and features.
             </Text>
 
             <Input

@@ -16,11 +16,11 @@ func TestPlacesLookup_ExactMatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create repo: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	// Pre-populate cache
 	ctx := context.Background()
-	repo.Save(ctx, &db.Place{
+	_ = repo.Save(ctx, &db.Place{
 		QueryNormalized: "cape town",
 		DisplayName:     "Cape Town, Western Cape, South Africa",
 		Lat:             -33.92,
@@ -59,7 +59,7 @@ func TestPlacesSubmit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create repo: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	server := NewServer(8080, ".", repo)
 

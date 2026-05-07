@@ -26,7 +26,7 @@ func TestSQLiteRepository_SaveAndFindExact(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create repo: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	ctx := context.Background()
 	place := &Place{
@@ -59,7 +59,7 @@ func TestSQLiteRepository_FindFuzzy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create repo: %v", err)
 	}
-	defer repo.Close()
+	defer func() { _ = repo.Close() }()
 
 	ctx := context.Background()
 
