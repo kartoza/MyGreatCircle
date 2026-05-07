@@ -17,7 +17,6 @@ import {
   useDisclosure,
   useToast,
   Badge,
-  Tooltip,
   Fade,
   ScaleFade,
   Modal,
@@ -515,11 +514,9 @@ function App() {
           _hover={{ bg: 'blackAlpha.800' }}
           transition="background 0.2s"
         >
-          <Tooltip label="Click to start over" placement="bottom">
-            <Heading size="md" bgGradient="linear(to-r, teal.300, cyan.400)" bgClip="text">
-              MyGreatCircle
-            </Heading>
-          </Tooltip>
+          <Heading size="md" bgGradient="linear(to-r, teal.300, cyan.400)" bgClip="text">
+            MyGreatCircle
+          </Heading>
           {!showDemo && places.length > 0 && (
             <Badge colorScheme="teal" variant="subtle">
               {places.length} places
@@ -549,28 +546,22 @@ function App() {
           spacing={2}
           pointerEvents="auto"
         >
-          <Tooltip label="Enter your places">
-            <Button
-              size="sm"
-              variant="ghost"
-              colorScheme="teal"
-              onClick={onInputOpen}
-            >
-              Edit Journey
-            </Button>
-          </Tooltip>
+          <Button
+            size="sm"
+            variant="ghost"
+            colorScheme="teal"
+            onClick={onInputOpen}
+          >
+            Edit Journey
+          </Button>
           {places.length > 0 && (
             <>
-              <Tooltip label="View place list">
-                <Button size="sm" variant="ghost" colorScheme="teal" onClick={onPlacesOpen}>
-                  Places
-                </Button>
-              </Tooltip>
-              <Tooltip label="Download PDFs">
-                <Button size="sm" colorScheme="teal" onClick={onOutputOpen}>
-                  Download
-                </Button>
-              </Tooltip>
+              <Button size="sm" variant="ghost" colorScheme="teal" onClick={onPlacesOpen}>
+                Places
+              </Button>
+              <Button size="sm" colorScheme="teal" onClick={onOutputOpen}>
+                Export
+              </Button>
             </>
           )}
         </HStack>
@@ -721,16 +712,12 @@ function App() {
           >
             {places.length > 0 && (
               <>
-                <Tooltip label="Export as JSON">
-                  <Button size="sm" variant="ghost" colorScheme="teal" onClick={handleExportJSON}>
-                    Export
-                  </Button>
-                </Tooltip>
-                <Tooltip label="Start over">
-                  <Button size="sm" variant="ghost" colorScheme="red" onClick={handleStartOver}>
-                    Clear
-                  </Button>
-                </Tooltip>
+                <Button size="sm" variant="ghost" colorScheme="teal" onClick={handleExportJSON}>
+                  Export
+                </Button>
+                <Button size="sm" variant="ghost" colorScheme="red" onClick={handleStartOver}>
+                  Clear
+                </Button>
               </>
             )}
           </HStack>
@@ -800,7 +787,7 @@ function App() {
         <ModalContent bg="gray.900" borderRadius="xl" mx={4} maxW="1200px">
           <ModalHeader pt={6} pb={4} borderBottomWidth="1px" borderColor="gray.700">
             <Heading size="md" bgGradient="linear(to-r, teal.300, cyan.400)" bgClip="text">
-              Download Your Journey
+              Export Your Journey
             </Heading>
           </ModalHeader>
           <ModalCloseButton top={4} right={4} />

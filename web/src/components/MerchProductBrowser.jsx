@@ -22,7 +22,7 @@ import { useGelato, formatPrice, CATEGORY_INFO, getProductIcon } from '../hooks/
  * Product browser for Gelato merchandise
  * Shows products grouped by category with tabs
  */
-export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
+export function MerchProductBrowser({ onSelectProduct, isDisabled, filterCategories }) {
   const {
     products,
     productsByCategory,
@@ -68,12 +68,14 @@ export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
     )
   }
 
-  // Sort categories by order defined in CATEGORY_INFO
-  const categories = Object.keys(productsByCategory).sort((a, b) => {
-    const orderA = CATEGORY_INFO[a]?.order || 99
-    const orderB = CATEGORY_INFO[b]?.order || 99
-    return orderA - orderB
-  })
+  // Sort categories by order defined in CATEGORY_INFO, optionally filtered
+  const categories = Object.keys(productsByCategory)
+    .filter(cat => !filterCategories || filterCategories.includes(cat))
+    .sort((a, b) => {
+      const orderA = CATEGORY_INFO[a]?.order || 99
+      const orderB = CATEGORY_INFO[b]?.order || 99
+      return orderA - orderB
+    })
 
   return (
     <Box>

@@ -9,9 +9,38 @@ import {
   Progress,
   useDisclosure,
   useToast,
+  IconButton,
+  HStack,
 } from '@chakra-ui/react'
-import { EmailModal } from './EmailModal'
+import { MerchProductBrowser } from './MerchProductBrowser'
 import { MerchCheckoutModal } from './MerchCheckoutModal'
+
+/**
+ * Maps our display categories to Gelato product categories
+ */
+const SHOP_SECTIONS = {
+  apparel: {
+    name: 'Apparel',
+    icon: '👕',
+    description: 'T-shirts, hoodies & sweatshirts',
+    color: 'orange',
+    categories: ['apparel'],
+  },
+  print: {
+    name: 'Print',
+    icon: '🖼️',
+    description: 'Posters, canvas & framed prints',
+    color: 'pink',
+    categories: ['wall-art'],
+  },
+  swag: {
+    name: 'Swag',
+    icon: '🎁',
+    description: 'Mugs, bags, phone cases & more',
+    color: 'yellow',
+    categories: ['accessories', 'phone-cases', 'home', 'stationery'],
+  },
+}
 
 export function OutputCards({
   onDownloadFactSheet,
@@ -22,7 +51,11 @@ export function OutputCards({
   isGeneratingGif,
   gifProgress,
 }) {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [activeSection, setActiveSection] = useState(null)
+  const [merchImageUrl, setMerchImageUrl] = useState(null)
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [isGeneratingMerchImage, setIsGeneratingMerchImage] = useState(false)
+
   const {
     isOpen: isCheckoutOpen,
     onOpen: onCheckoutOpen,
@@ -30,18 +63,17 @@ export function OutputCards({
   } = useDisclosure()
   const toast = useToast()
 
-  const [selectedCategory, setSelectedCategory] = useState(null)
-  const [merchImageUrl, setMerchImageUrl] = useState(null)
-  const [isGeneratingMerchImage, setIsGeneratingMerchImage] = useState(false)
+  const handleShopClick = (sectionKey) => {
+    setActiveSection(activeSection === sectionKey ? null : sectionKey)
+  }
 
-  const handleMerchClick = async (category) => {
-    // Generate image for merchandise if handler provided
+  const handleSelectProduct = async (product) => {
     if (onGenerateMerchImage) {
       setIsGeneratingMerchImage(true)
       try {
         const imageUrl = await onGenerateMerchImage()
         setMerchImageUrl(imageUrl)
-        setSelectedCategory(category)
+        setSelectedProduct(product)
         onCheckoutOpen()
       } catch (error) {
         toast({
@@ -53,9 +85,6 @@ export function OutputCards({
       } finally {
         setIsGeneratingMerchImage(false)
       }
-    } else {
-      // Fallback to email modal for interest capture
-      onOpen()
     }
   }
 
@@ -207,157 +236,90 @@ export function OutputCards({
         </Box>
       </SimpleGrid>
 
-      {/* Merchandise Row */}
+      {/* Shop Row */}
       <Text fontSize="sm" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={4}>
         Get It Printed
       </Text>
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-        {/* T-Shirt */}
-        <Box
-          bg="gray.700"
-          p={6}
-          borderRadius="lg"
-          border="1px solid"
-          borderColor="orange.500"
-          position="relative"
-          overflow="hidden"
-          transition="all 0.2s"
-          display="flex"
-          flexDirection="column"
-          _hover={{
-            borderColor: 'orange.400',
-            transform: 'translateY(-2px)',
-            boxShadow: 'lg',
-          }}
-        >
-          <VStack spacing={4} align="stretch" flex="1">
-            <Box textAlign="center">
-              <Text fontSize="3xl" mb={2}>👕</Text>
-              <Heading size="md">T-Shirt</Heading>
-              <Text fontSize="sm" color="gray.400" mt={1}>
-                Wear your journey with pride
-              </Text>
-            </Box>
-            <Text fontSize="sm" color="orange.400" textAlign="center">
-              From $29
-            </Text>
-            <Box flex="1" />
-            <Button
-              colorScheme="orange"
-              onClick={() => handleMerchClick('tshirt')}
-              isLoading={isGeneratingMerchImage && selectedCategory === 'tshirt'}
-              loadingText="Preparing..."
-              width="100%"
-              px={8}
-              py={6}
-              fontSize="sm"
-            >
-              Order Now
-            </Button>
-          </VStack>
-        </Box>
-
-        {/* Canvas Print */}
-        <Box
-          bg="gray.700"
-          p={6}
-          borderRadius="lg"
-          border="1px solid"
-          borderColor="pink.500"
-          position="relative"
-          overflow="hidden"
-          transition="all 0.2s"
-          display="flex"
-          flexDirection="column"
-          _hover={{
-            borderColor: 'pink.400',
-            transform: 'translateY(-2px)',
-            boxShadow: 'lg',
-          }}
-        >
-          <VStack spacing={4} align="stretch" flex="1">
-            <Box textAlign="center">
-              <Text fontSize="3xl" mb={2}>🖼️</Text>
-              <Heading size="md">Canvas Print</Heading>
-              <Text fontSize="sm" color="gray.400" mt={1}>
-                Museum-quality wall art
-              </Text>
-            </Box>
-            <Text fontSize="sm" color="pink.400" textAlign="center">
-              From $49
-            </Text>
-            <Box flex="1" />
-            <Button
-              colorScheme="pink"
-              onClick={() => handleMerchClick('canvas')}
-              isLoading={isGeneratingMerchImage && selectedCategory === 'canvas'}
-              loadingText="Preparing..."
-              width="100%"
-              px={8}
-              py={6}
-              fontSize="sm"
-            >
-              Order Now
-            </Button>
-          </VStack>
-        </Box>
-
-        {/* Coffee Mug */}
-        <Box
-          bg="gray.700"
-          p={6}
-          borderRadius="lg"
-          border="1px solid"
-          borderColor="yellow.500"
-          position="relative"
-          overflow="hidden"
-          transition="all 0.2s"
-          display="flex"
-          flexDirection="column"
-          _hover={{
-            borderColor: 'yellow.400',
-            transform: 'translateY(-2px)',
-            boxShadow: 'lg',
-          }}
-        >
-          <VStack spacing={4} align="stretch" flex="1">
-            <Box textAlign="center">
-              <Text fontSize="3xl" mb={2}>☕</Text>
-              <Heading size="md">Coffee Mug</Heading>
-              <Text fontSize="sm" color="gray.400" mt={1}>
-                Start your day with memories
-              </Text>
-            </Box>
-            <Text fontSize="sm" color="yellow.400" textAlign="center">
-              From $19
-            </Text>
-            <Box flex="1" />
-            <Button
-              colorScheme="yellow"
-              onClick={() => handleMerchClick('mug')}
-              isLoading={isGeneratingMerchImage && selectedCategory === 'mug'}
-              loadingText="Preparing..."
-              width="100%"
-              px={8}
-              py={6}
-              fontSize="sm"
-            >
-              Order Now
-            </Button>
-          </VStack>
-        </Box>
+      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={activeSection ? 6 : 0}>
+        {Object.entries(SHOP_SECTIONS).map(([key, section]) => (
+          <Box
+            key={key}
+            bg={activeSection === key ? `${section.color}.900` : 'gray.700'}
+            p={6}
+            borderRadius="lg"
+            border="2px solid"
+            borderColor={activeSection === key ? `${section.color}.400` : `${section.color}.500`}
+            position="relative"
+            overflow="hidden"
+            transition="all 0.2s"
+            display="flex"
+            flexDirection="column"
+            cursor="pointer"
+            onClick={() => handleShopClick(key)}
+            _hover={{
+              borderColor: `${section.color}.400`,
+              transform: 'translateY(-2px)',
+              boxShadow: 'lg',
+            }}
+          >
+            <VStack spacing={4} align="stretch" flex="1">
+              <Box textAlign="center">
+                <Text fontSize="3xl" mb={2}>{section.icon}</Text>
+                <Heading size="md">{section.name}</Heading>
+                <Text fontSize="sm" color="gray.400" mt={1}>
+                  {section.description}
+                </Text>
+              </Box>
+              <Box flex="1" />
+              <Button
+                colorScheme={section.color}
+                variant={activeSection === key ? 'solid' : 'outline'}
+                width="100%"
+                px={8}
+                py={6}
+                fontSize="sm"
+              >
+                {activeSection === key ? 'Browsing...' : 'Browse'}
+              </Button>
+            </VStack>
+          </Box>
+        ))}
       </SimpleGrid>
 
-      <EmailModal
-        isOpen={isOpen}
-        onClose={onClose}
-        onSubmit={() => onClose()}
-      />
+      {/* Expanded product browser for active section */}
+      {activeSection && (
+        <Box
+          bg="gray.800"
+          borderRadius="xl"
+          border="1px solid"
+          borderColor="gray.600"
+          p={6}
+        >
+          <HStack justify="space-between" mb={4}>
+            <Heading size="md">
+              {SHOP_SECTIONS[activeSection].icon} {SHOP_SECTIONS[activeSection].name}
+            </Heading>
+            <Button
+              size="sm"
+              variant="ghost"
+              colorScheme="gray"
+              onClick={() => setActiveSection(null)}
+            >
+              Close
+            </Button>
+          </HStack>
+          <MerchProductBrowser
+            onSelectProduct={handleSelectProduct}
+            isDisabled={isGeneratingMerchImage}
+            filterCategories={SHOP_SECTIONS[activeSection].categories}
+          />
+        </Box>
+      )}
 
       <MerchCheckoutModal
         isOpen={isCheckoutOpen}
         onClose={onCheckoutClose}
-        category={selectedCategory}
+        category={selectedProduct?.category}
         imageUrl={merchImageUrl}
       />
     </>
