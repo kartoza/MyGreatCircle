@@ -133,5 +133,5 @@ func (s *Server) handlePlacesSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(SubmitResponse{Saved: saved})
+	_ = json.NewEncoder(w).Encode(SubmitResponse{Saved: saved})
 }

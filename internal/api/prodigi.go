@@ -201,7 +201,7 @@ func getProdigiAPIKey() string {
 // handleProdigiProducts returns available products
 func (s *Server) handleProdigiProducts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(GetProductsResponse{Products: ProdigiProducts})
+	_ = json.NewEncoder(w).Encode(GetProductsResponse{Products: ProdigiProducts})
 }
 
 // handleProdigiQuote gets a price quote for a product

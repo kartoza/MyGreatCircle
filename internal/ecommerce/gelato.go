@@ -148,7 +148,7 @@ func (c *GelatoClient) doRequest(method, path string, body interface{}) ([]byte,
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -663,7 +663,7 @@ func (c *GelatoClient) UploadImage(imageDataURL string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("upload request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
@@ -760,7 +760,7 @@ func GetMarginPercent() float64 {
 		return 30.0
 	}
 	var margin float64
-	fmt.Sscanf(marginStr, "%f", &margin)
+	_, _ = fmt.Sscanf(marginStr, "%f", &margin)
 	if margin <= 0 || margin > 100 {
 		return 30.0
 	}

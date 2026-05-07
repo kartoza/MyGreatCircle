@@ -135,7 +135,7 @@ func (c *StripeClient) doRequest(method, path string, data url.Values) ([]byte, 
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

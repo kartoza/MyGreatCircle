@@ -189,7 +189,7 @@ func (s *MerchService) HandleCreateMockup(w http.ResponseWriter, r *http.Request
 	products, _ := s.gelato.GetProducts()
 	var productName string
 	var price float64
-	var currency string = "EUR"
+	currency := "EUR"
 	for _, p := range products {
 		if p.ID == req.ProductID {
 			productName = p.Title
@@ -429,7 +429,7 @@ func generateID() string {
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 // writeError writes an error response
