@@ -40,3 +40,7 @@ Thumbs.db
 
 # Logs
 PROMPT.log
+.direnv/
+data/geonames/
+geonames-import
+git.sh
