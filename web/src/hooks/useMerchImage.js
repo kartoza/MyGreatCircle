@@ -220,22 +220,8 @@ export function useMerchImage() {
       ctx.fillStyle = '#9ca3af'
       ctx.fillText('mygreatcircle.kartoza.com', brandX, brandY + 10)
 
-      // Convert to PNG and upload
-      const dataUrl = canvas.toDataURL('image/png')
-
-      // Upload to server
-      const response = await fetch('/api/images/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: dataUrl }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image')
-      }
-
-      const result = await response.json()
-      return result.url
+      // Return data URL directly (upload happens at checkout time if needed)
+      return canvas.toDataURL('image/png')
 
     } catch (error) {
       console.error('Merchandise image generation failed:', error)

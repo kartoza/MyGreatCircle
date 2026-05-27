@@ -6,14 +6,16 @@ import (
 	"time"
 
 	"github.com/kartoza/MyGreatCircle/internal/db"
+	"github.com/kartoza/MyGreatCircle/internal/ecommerce"
 )
 
 type Server struct {
-	port       int
-	webDir     string
-	mux        *http.ServeMux
-	placeRepo  db.PlaceRepository
-	imageStore *ImageStore
+	port         int
+	webDir       string
+	mux          *http.ServeMux
+	placeRepo    db.PlaceRepository
+	imageStore   *ImageStore
+	merchService *ecommerce.MerchService
 }
 
 // ServerConfig contains configuration for the server
@@ -34,11 +36,14 @@ func NewServer(port int, webDir string, placeRepo db.PlaceRepository) *Server {
 }
 
 func NewServerWithConfig(cfg ServerConfig) *Server {
+	merch := ecommerce.NewMerchService()
+
 	s := &Server{
-		port:      cfg.Port,
-		webDir:    cfg.WebDir,
-		mux:       http.NewServeMux(),
-		placeRepo: cfg.PlaceRepo,
+		port:         cfg.Port,
+		webDir:       cfg.WebDir,
+		mux:          http.NewServeMux(),
+		placeRepo:    cfg.PlaceRepo,
+		merchService: merch,
 	}
 
 	// Initialize image store if configured
@@ -67,6 +72,13 @@ func (s *Server) setupRoutes() {
 	// Image upload/serve routes for merchandise
 	s.mux.HandleFunc("POST /api/images/upload", s.handleImageUpload)
 	s.mux.HandleFunc("GET /api/images/", s.handleImageGet)
+
+	// Gelato merchandise routes
+	s.mux.HandleFunc("GET /api/merch/config", s.merchService.HandleGetConfig)
+	s.mux.HandleFunc("GET /api/merch/products", s.merchService.HandleGetProducts)
+	s.mux.HandleFunc("POST /api/merch/mockup", s.merchService.HandleCreateMockup)
+	s.mux.HandleFunc("POST /api/merch/checkout", s.merchService.HandleCreateCheckout)
+	s.mux.HandleFunc("POST /api/merch/webhook", s.merchService.HandleWebhook)
 
 	// Static files (web frontend)
 	fs := http.FileServer(http.Dir(s.webDir))

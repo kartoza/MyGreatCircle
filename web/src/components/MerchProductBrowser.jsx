@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Box,
   VStack,
@@ -14,27 +14,30 @@ import {
   TabPanel,
   Spinner,
   Badge,
+  Image,
   useToast,
 } from '@chakra-ui/react'
 import { useGelato, formatPrice, CATEGORY_INFO, getProductIcon } from '../hooks/useGelato'
+import { useProductMockup } from '../hooks/useProductMockup'
 
 /**
  * Product browser for Gelato merchandise
- * Shows products grouped by category with tabs
+ * Shows products grouped by category with mockup previews
  */
-export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
+export function MerchProductBrowser({ onSelectProduct, isDisabled, filterCategories, journeyImageDataUrl }) {
   const {
     products,
     productsByCategory,
     isLoading,
-    isConfigured,
     error,
     fetchProducts,
   } = useGelato()
+  const { generateMockup } = useProductMockup()
   const [selectedCategory, setSelectedCategory] = useState(0)
+  const [mockupCache, setMockupCache] = useState({})
   const toast = useToast()
 
-  // Fetch products on mount (always - uses fallback if API unavailable)
+  // Fetch products on mount
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
@@ -50,6 +53,20 @@ export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
       })
     }
   }, [error, toast])
+
+  // Generate mockups for visible products when journey image is available
+  const getMockup = useCallback(async (productId) => {
+    if (!journeyImageDataUrl || mockupCache[productId]) return mockupCache[productId]
+
+    try {
+      const mockupUrl = await generateMockup(journeyImageDataUrl, productId, 400, 300)
+      setMockupCache(prev => ({ ...prev, [productId]: mockupUrl }))
+      return mockupUrl
+    } catch (err) {
+      console.error('Failed to generate mockup for', productId, err)
+      return null
+    }
+  }, [journeyImageDataUrl, mockupCache, generateMockup])
 
   if (isLoading && products.length === 0) {
     return (
@@ -68,12 +85,17 @@ export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
     )
   }
 
-  // Sort categories by order defined in CATEGORY_INFO
-  const categories = Object.keys(productsByCategory).sort((a, b) => {
-    const orderA = CATEGORY_INFO[a]?.order || 99
-    const orderB = CATEGORY_INFO[b]?.order || 99
-    return orderA - orderB
-  })
+  // Sort categories by order, optionally filtered
+  const categories = Object.keys(productsByCategory)
+    .filter(cat => !filterCategories || filterCategories.includes(cat))
+    .sort((a, b) => {
+      const orderA = CATEGORY_INFO[a]?.order || 99
+      const orderB = CATEGORY_INFO[b]?.order || 99
+      return orderA - orderB
+    })
+
+  // Hide tabs if only one category
+  const showTabs = categories.length > 1
 
   return (
     <Box>
@@ -83,31 +105,33 @@ export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
         index={selectedCategory}
         onChange={setSelectedCategory}
       >
-        <TabList mb={4} flexWrap="wrap" gap={2}>
-          {categories.map((category) => {
-            const info = CATEGORY_INFO[category] || CATEGORY_INFO.other
-            return (
-              <Tab
-                key={category}
-                bg="gray.700"
-                _selected={{ bg: 'brand.500', color: 'white' }}
-              >
-                <HStack spacing={2}>
-                  <Text>{info.icon}</Text>
-                  <Text>{info.name}</Text>
-                  <Badge
-                    colorScheme="gray"
-                    variant="subtle"
-                    fontSize="xs"
-                    borderRadius="full"
-                  >
-                    {productsByCategory[category].length}
-                  </Badge>
-                </HStack>
-              </Tab>
-            )
-          })}
-        </TabList>
+        {showTabs && (
+          <TabList mb={4} flexWrap="wrap" gap={2}>
+            {categories.map((category) => {
+              const info = CATEGORY_INFO[category] || CATEGORY_INFO.other
+              return (
+                <Tab
+                  key={category}
+                  bg="gray.700"
+                  _selected={{ bg: 'brand.500', color: 'white' }}
+                >
+                  <HStack spacing={2}>
+                    <Text>{info.icon}</Text>
+                    <Text>{info.name}</Text>
+                    <Badge
+                      colorScheme="gray"
+                      variant="subtle"
+                      fontSize="xs"
+                      borderRadius="full"
+                    >
+                      {productsByCategory[category].length}
+                    </Badge>
+                  </HStack>
+                </Tab>
+              )
+            })}
+          </TabList>
+        )}
 
         <TabPanels>
           {categories.map((category) => (
@@ -119,6 +143,8 @@ export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
                     product={product}
                     onSelect={onSelectProduct}
                     isDisabled={isDisabled}
+                    getMockup={getMockup}
+                    mockupUrl={mockupCache[product.id]}
                   />
                 ))}
               </SimpleGrid>
@@ -131,10 +157,19 @@ export function MerchProductBrowser({ onSelectProduct, isDisabled }) {
 }
 
 /**
- * Individual product card
+ * Individual product card with mockup preview
  */
-function ProductCard({ product, onSelect, isDisabled }) {
+function ProductCard({ product, onSelect, isDisabled, getMockup, mockupUrl }) {
   const hasVariants = product.variants && product.variants.length > 1
+  const [isLoadingMockup, setIsLoadingMockup] = useState(false)
+
+  // Generate mockup when card becomes visible
+  useEffect(() => {
+    if (!mockupUrl && getMockup && !isLoadingMockup) {
+      setIsLoadingMockup(true)
+      getMockup(product.id).finally(() => setIsLoadingMockup(false))
+    }
+  }, [product.id, mockupUrl, getMockup, isLoadingMockup])
 
   return (
     <Box
@@ -147,18 +182,34 @@ function ProductCard({ product, onSelect, isDisabled }) {
         boxShadow: isDisabled ? 'none' : 'lg',
       }}
     >
-      {/* Product image placeholder with icon */}
+      {/* Product mockup or icon */}
       <Box
         bg="gray.600"
-        h="120px"
+        h="160px"
         display="flex"
         alignItems="center"
         justifyContent="center"
         position="relative"
+        overflow="hidden"
       >
-        <Text fontSize="4xl" opacity={0.7}>
-          {getProductIcon(product.id)}
-        </Text>
+        {mockupUrl ? (
+          <Image
+            src={mockupUrl}
+            alt={product.title}
+            objectFit="cover"
+            w="100%"
+            h="100%"
+          />
+        ) : isLoadingMockup ? (
+          <VStack spacing={2}>
+            <Spinner size="sm" color="gray.400" />
+            <Text fontSize="xs" color="gray.500">Generating preview...</Text>
+          </VStack>
+        ) : (
+          <Text fontSize="4xl" opacity={0.7}>
+            {getProductIcon(product.id)}
+          </Text>
+        )}
       </Box>
 
       <VStack p={4} spacing={3} align="stretch">
