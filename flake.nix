@@ -11,13 +11,13 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        version = "0.1.0";
+        version = "0.2.0";
 
         mygreatcircle = pkgs.buildGoModule {
           pname = "mygreatcircle";
           inherit version;
           src = ./.;
-          vendorHash = null;
+          vendorHash = "sha256-1KxPlpsBRVhYYDxo2XgForp0XM8WP5Z4RyjyfNq0K9Y=";
 
           ldflags = [
             "-s" "-w"

@@ -1,9 +1,10 @@
 .PHONY: all build run test lint clean dev web-dev web-build web-install docs-dev docs-build geonames-import
 
-VERSION := 0.1.0
+VERSION := 0.2.0
 BINARY := mygreatcircle
 GO := go
 GOFLAGS := -ldflags "-s -w -X main.Version=$(VERSION)"
+PORT ?= 18080
 
 all: build
 
@@ -12,7 +13,7 @@ build:
 	$(GO) build $(GOFLAGS) -o geonames-import ./cmd/geonames-import
 
 run: build
-	./$(BINARY)
+	./$(BINARY) -port=$(PORT)
 
 test:
 	$(GO) test -v ./...
