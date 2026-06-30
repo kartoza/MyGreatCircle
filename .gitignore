@@ -46,3 +46,11 @@ geonames-import
 git.sh
 screenshots_nocommit/
 .claude
+
+# Session-local diagnostic scripts (Claude Code)
+claude.sh
+fix.sh
+
+# Unrelated user data
+osgeo-events.txt
+osgeo.qgz

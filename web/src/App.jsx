@@ -191,12 +191,13 @@ function App() {
     await generatePoster(svgRef.current, displayPlaces, theme, ecoMode, ecoStats)
   }
 
-  const handleDownloadGif = async () => {
+  const handleDownloadGif = async (gifOptions = {}) => {
     await generateGif(displayPlaces, theme, ecoMode, ecoStats, {
       width: 800,
       height: 450,
       frameDelay: 80,
       arcSegmentsPerFrame: 5,
+      ...gifOptions,
     })
   }
 

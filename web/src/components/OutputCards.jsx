@@ -9,6 +9,9 @@ import {
   Progress,
   useToast,
   HStack,
+  Select,
+  FormControl,
+  FormLabel,
 } from '@chakra-ui/react'
 import { MerchProductBrowser } from './MerchProductBrowser'
 import { useGelato } from '../hooks/useGelato'
@@ -52,8 +55,19 @@ export function OutputCards({
   const [activeSection, setActiveSection] = useState(null)
   const [journeyImageDataUrl, setJourneyImageDataUrl] = useState(null)
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [gifLabels, setGifLabels] = useState('none')
+  const [gifTrailLength, setGifTrailLength] = useState('0')
+  const [gifSize, setGifSize] = useState('medium')
   const { createCheckout } = useGelato()
   const toast = useToast()
+
+  // 16:9 presets — matches the geoEqualEarth projection's natural shape
+  const GIF_SIZES = {
+    small:  { label: 'Small (480 × 270)',    width: 480,  height: 270 },
+    medium: { label: 'Medium (800 × 450)',   width: 800,  height: 450 },
+    large:  { label: 'Large (1280 × 720)',   width: 1280, height: 720 },
+    xlarge: { label: 'Extra large (1920 × 1080)', width: 1920, height: 1080 },
+  }
 
   const handleShopClick = async (sectionKey) => {
     if (activeSection === sectionKey) {
@@ -210,6 +224,52 @@ export function OutputCards({
             <Text fontSize="sm" color="green.400" textAlign="center">
               Free
             </Text>
+
+            <FormControl>
+              <FormLabel fontSize="xs" mb={1} color="gray.300">Size</FormLabel>
+              <Select
+                size="sm"
+                value={gifSize}
+                onChange={(e) => setGifSize(e.target.value)}
+                isDisabled={isGeneratingGif}
+              >
+                {Object.entries(GIF_SIZES).map(([key, cfg]) => (
+                  <option key={key} value={key}>{cfg.label}</option>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel fontSize="xs" mb={1} color="gray.300">Labels</FormLabel>
+              <Select
+                size="sm"
+                value={gifLabels}
+                onChange={(e) => setGifLabels(e.target.value)}
+                isDisabled={isGeneratingGif}
+              >
+                <option value="none">None</option>
+                <option value="name">Place name</option>
+                <option value="date">Date</option>
+                <option value="both">Name &amp; date</option>
+              </Select>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel fontSize="xs" mb={1} color="gray.300">Trail</FormLabel>
+              <Select
+                size="sm"
+                value={gifTrailLength}
+                onChange={(e) => setGifTrailLength(e.target.value)}
+                isDisabled={isGeneratingGif}
+              >
+                <option value="0">Persistent (full journey)</option>
+                <option value="1">Last 1 arc</option>
+                <option value="2">Last 2 arcs</option>
+                <option value="3">Last 3 arcs</option>
+                <option value="5">Last 5 arcs</option>
+              </Select>
+            </FormControl>
+
             <Box flex="1" />
             {isGeneratingGif && (
               <Box>
@@ -227,7 +287,15 @@ export function OutputCards({
             )}
             <Button
               colorScheme="purple"
-              onClick={onDownloadGif}
+              onClick={() => {
+                const size = GIF_SIZES[gifSize] || GIF_SIZES.medium
+                onDownloadGif({
+                  width: size.width,
+                  height: size.height,
+                  labels: gifLabels,
+                  trailLength: parseInt(gifTrailLength, 10) || 0,
+                })
+              }}
               isLoading={isGeneratingGif}
               loadingText="Rendering..."
               width="100%"

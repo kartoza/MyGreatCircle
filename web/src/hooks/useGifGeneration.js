@@ -76,6 +76,8 @@ export function useGifGeneration() {
       frameDelay = 100, // ms between frames
       quality = 10, // 1-30, lower is better quality
       arcSegmentsPerFrame = 3,
+      labels = 'none', // 'none' | 'name' | 'date' | 'both'
+      trailLength = 0, // 0 = persistent; N = keep N arcs behind the head
     } = options
 
     setIsGenerating(true)
@@ -156,9 +158,14 @@ export function useGifGeneration() {
         })
       }
 
-      // Helper to draw arcs up to a certain segment
-      const drawArcs = (upToSegment) => {
+      // Helper to draw arcs up to a certain segment.
+      // When trailLength > 0, only arcs whose placeIndex is within
+      // [headArcIndex - trailLength + 1, headArcIndex] are drawn.
+      const drawArcs = (upToSegment, headArcIndex) => {
         const useGradient = themeConfig.arcGradient?.colors?.length > 1
+        const oldestVisibleArc = trailLength > 0
+          ? Math.max(0, headArcIndex - trailLength + 1)
+          : 0
 
         let segmentCount = 0
         ctx.lineWidth = themeConfig.arc.strokeWidth
@@ -170,9 +177,17 @@ export function useGifGeneration() {
           ctx.setLineDash([])
         }
 
-        for (const arc of allArcPoints) {
+        for (let arcIdx = 0; arcIdx < allArcPoints.length; arcIdx++) {
+          const arc = allArcPoints[arcIdx]
+          const arcVisible = arcIdx >= oldestVisibleArc
+
           for (let j = 1; j < arc.points.length; j++) {
             if (segmentCount >= upToSegment) return
+
+            if (!arcVisible) {
+              segmentCount++
+              continue
+            }
 
             const [x1, y1] = arc.points[j - 1]
             const [x2, y2] = arc.points[j]
@@ -222,6 +237,94 @@ export function useGifGeneration() {
             ctx.stroke()
           }
         }
+      }
+
+      // Build the label text for a place per the `labels` option
+      const labelText = (place) => {
+        if (labels === 'none' || !place) return ''
+        const name = place.geocodedName || place.name || ''
+        const year = place.yearStart
+          ? (place.yearEnd ? `${place.yearStart}–${place.yearEnd}` : `${place.yearStart}`)
+          : ''
+        if (labels === 'name') return name
+        if (labels === 'date') return year
+        if (labels === 'both') return year ? `${name} · ${year}` : name
+        return ''
+      }
+
+      // Greedy word-wrap that returns an array of lines fitting within maxWidth.
+      // Falls back to character-level breaking for tokens longer than maxWidth.
+      const wrapText = (text, maxWidth) => {
+        if (!text) return []
+        const words = text.split(/\s+/)
+        const lines = []
+        let line = ''
+        const measure = (s) => ctx.measureText(s).width
+        for (const word of words) {
+          const candidate = line ? `${line} ${word}` : word
+          if (measure(candidate) <= maxWidth) {
+            line = candidate
+            continue
+          }
+          if (line) lines.push(line)
+          if (measure(word) <= maxWidth) {
+            line = word
+          } else {
+            // word itself is too long — chunk it character by character
+            let chunk = ''
+            for (const ch of word) {
+              if (measure(chunk + ch) <= maxWidth) {
+                chunk += ch
+              } else {
+                if (chunk) lines.push(chunk)
+                chunk = ch
+              }
+            }
+            line = chunk
+          }
+        }
+        if (line) lines.push(line)
+        return lines
+      }
+
+      // Draw the current head's label in the bottom-left corner, styled to
+      // match the branding chip in the bottom-right. Word-wraps so a long
+      // "City, Region, Country · 2018–2020" doesn't stretch across the map.
+      const drawHeadLabel = (headPlaceIndex) => {
+        if (labels === 'none') return
+        if (headPlaceIndex < 0 || headPlaceIndex >= validPlaces.length) return
+        const text = labelText(validPlaces[headPlaceIndex])
+        if (!text) return
+
+        const padding = 15      // outer offset from canvas edge
+        const innerX = 10       // horizontal padding inside the chip
+        const innerY = 8        // vertical padding inside the chip
+        const maxWidth = 240    // chip max width — slightly wider than branding to fit a place name
+        const lineHeight = 16
+        const fontSize = 12
+
+        ctx.font = `${fontSize}px sans-serif`
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+
+        const lines = wrapText(text, maxWidth - innerX * 2)
+        if (lines.length === 0) return
+
+        const textWidth = Math.max(...lines.map(l => ctx.measureText(l).width))
+        const boxW = textWidth + innerX * 2
+        const boxH = lines.length * lineHeight + innerY * 2
+        const boxX = padding
+        const boxY = height - boxH - padding
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+        ctx.beginPath()
+        ctx.roundRect(boxX, boxY, boxW, boxH, 8)
+        ctx.fill()
+
+        ctx.fillStyle = '#ffffff'
+        lines.forEach((line, i) => {
+          ctx.fillText(line, boxX + innerX, boxY + innerY + i * lineHeight)
+        })
       }
 
       // Helper to draw eco stats overlay
@@ -293,29 +396,34 @@ export function useGifGeneration() {
       for (let i = 0; i < 5; i++) {
         drawBaseMap()
         drawPoints(0) // Show first point
+        drawHeadLabel(0)
         drawBranding()
         gif.addFrame(ctx, { copy: true, delay: frameDelay })
       }
 
-      // Animate arcs being drawn
+      // Animate arcs being drawn. headArcIndex is the arc currently being
+      // drawn (0-based: arc 0 connects place 0 → place 1).
       let currentSegment = 0
-      let currentPlaceIndex = 0
+      let headArcIndex = 0
+      let headPlaceIndex = 0
 
       while (currentSegment < totalSegments) {
         drawBaseMap()
 
-        // Determine which place we've reached
+        // Determine which arc/place we've reached
         let segmentCount = 0
         for (let i = 0; i < allArcPoints.length; i++) {
           segmentCount += allArcPoints[i].points.length - 1
           if (currentSegment < segmentCount) {
-            currentPlaceIndex = i + 1
+            headArcIndex = i
+            headPlaceIndex = i + 1
             break
           }
         }
 
-        drawArcs(currentSegment)
-        drawPoints(currentPlaceIndex)
+        drawArcs(currentSegment, headArcIndex)
+        drawPoints(headPlaceIndex)
+        drawHeadLabel(headPlaceIndex)
         drawBranding()
 
         gif.addFrame(ctx, { copy: true, delay: frameDelay })
@@ -325,10 +433,13 @@ export function useGifGeneration() {
       }
 
       // Final frames showing complete journey with eco stats and branding
+      const lastArcIndex = allArcPoints.length - 1
+      const lastPlaceIndex = validPlaces.length - 1
       for (let i = 0; i < 10; i++) {
         drawBaseMap()
-        drawArcs(totalSegments)
-        drawPoints(validPlaces.length - 1)
+        drawArcs(totalSegments, lastArcIndex)
+        drawPoints(lastPlaceIndex)
+        drawHeadLabel(lastPlaceIndex)
         drawBranding()
         drawEcoStats()
         gif.addFrame(ctx, { copy: true, delay: frameDelay * 2 })
